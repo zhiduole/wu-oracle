@@ -15,13 +15,16 @@ function verifyCreemSignature(params: Record<string, string>, apiKey: string): b
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
-    const { checkoutId, orderId, question, hexNumber, hexName, hexZh, timeStr, signature } = body
+    const {
+      checkoutId, orderId, signature,
+      question, hexNumber, hexName, hexZh, timeStr,
+      upperTrigram, lowerTrigram, upperTrigramEn, lowerTrigramEn, movingLine,
+    } = body
 
     const isValid = verifyCreemSignature(
       { checkout_id: checkoutId, order_id: orderId, signature },
       process.env.CREEM_API_KEY!
     )
-
     if (!isValid) {
       return NextResponse.json({ error: 'Invalid payment signature' }, { status: 403 })
     }
@@ -29,14 +32,18 @@ export async function POST(req: NextRequest) {
     const systemPrompt = `You are the Wú Oracle, an interpreter of the I Ching using Plum Blossom Numerology (梅花易数).
 
 The hexagram cast is #${hexNumber}: "${hexName}" (${hexZh}).
-The time of casting: ${timeStr}.
+Upper trigram: ${upperTrigramEn} (${upperTrigram})
+Lower trigram: ${lowerTrigramEn} (${lowerTrigram})
+Moving line: Line ${movingLine} (counted from the bottom)
+Time of casting: ${timeStr}
 
 Your task: Give a CLEAR, DIRECT, PLAIN-ENGLISH answer to the querent's specific question.
 
 Rules:
-- Answer in 150–220 words of plain, conversational English. No flowery or vague language.
+- Answer in 180–240 words of plain, conversational English. No flowery or vague language.
 - Start with a one-sentence direct answer: yes/no/likely/unlikely, or a clear statement of direction.
-- Then explain WHY, drawing on the specific meaning of this hexagram as it applies to their situation.
+- Briefly explain the meaning of the upper and lower trigrams as they relate to the situation.
+- Reference the moving line and what it indicates about how the situation will develop.
 - Name the key risk or opportunity they should be aware of.
 - End with one concrete, actionable piece of advice.
 - Do not explain what the I Ching is. Do not say you are an AI. Speak as the Oracle, but in plain modern English.
