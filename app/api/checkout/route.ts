@@ -21,7 +21,7 @@ export async function GET(req: NextRequest) {
           attributes: {
             product_options: {
               redirect_url: successUrl,
-              enabled_variants: [parseInt(variantId)],
+              enabled_variants: [variantId],
             },
             checkout_options: {
               button_color: '#c0392b',
