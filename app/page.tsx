@@ -1,8 +1,7 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 
-// ── Hexagram data ──
 const HEXAGRAMS = [
   {n:1,en:"The Creative",zh:"乾 · Qián",sym:"䷀",lines:[1,1,1,1,1,1]},
   {n:2,en:"The Receptive",zh:"坤 · Kūn",sym:"䷁",lines:[0,0,0,0,0,0]},
@@ -91,9 +90,7 @@ export default function HomePage() {
   const [modalOpen, setModalOpen] = useState(false)
   const [modalTime, setModalTime] = useState('')
   const [timeAdjusted, setTimeAdjusted] = useState(false)
-  
 
-  // Clock
   useEffect(() => {
     const tick = () => {
       const d = new Date(Date.now() + timeOffset)
@@ -118,13 +115,11 @@ export default function HomePage() {
 
   function handleCast() {
     if (!question.trim()) return
-    // Calculate hexagram now, store in sessionStorage before redirect
     const hexIdx = getHexIndex(question, timeOffset)
     const d = new Date(Date.now() + timeOffset)
     sessionStorage.setItem('wu_question', question)
     sessionStorage.setItem('wu_hex_index', String(hexIdx))
     sessionStorage.setItem('wu_time', formatTime(d))
-    // Redirect to Lemon Squeezy checkout
     const successUrl = `${window.location.origin}/success`
     window.location.href = `/api/checkout?successUrl=${encodeURIComponent(successUrl)}`
   }
@@ -167,7 +162,9 @@ export default function HomePage() {
       <div style={s.page}>
         {/* Masthead */}
         <header style={s.masthead}>
-          <div style={s.seal}><span style={s.sealChar}>易</span></div>
+          <div style={{ textAlign: 'center', marginBottom: 16 }}>
+            <div style={s.seal}><span style={s.sealChar}>易</span></div>
+          </div>
           <h1 style={s.title}>Wú · <em style={{ color: '#c0392b', fontStyle: 'normal' }}>The Book of Changes</em></h1>
           <div style={s.rule}>
             <div style={s.ruleLine} />
@@ -185,7 +182,7 @@ export default function HomePage() {
             Take three slow, deep breaths. Clear your mind completely. Then bring your full attention
             to your question — not just the words, but the weight of it.
           </p>
-          <p style={{ ...s.instrText, marginTop: 12 }}>
+          <p style={{ ...s.instrText, marginTop: 10 }}>
             The oracle answers best when your question is specific and personal.
             Vague questions receive vague answers — the more clearly you name your situation,
             the more useful the reading will be.
@@ -211,7 +208,7 @@ export default function HomePage() {
           />
           <div style={s.cardFooter}>
             <span style={s.charCount}>{question.length} / 400</span>
-            <div style={s.priceTag}>$3.99 · one reading</div>
+            <span style={s.priceTag}>$3.99 · one reading</span>
             <button style={s.castBtn} onClick={handleCast} disabled={!question.trim()}>
               Cast the Coins →
             </button>
@@ -239,9 +236,9 @@ export default function HomePage() {
 
 const s: Record<string, React.CSSProperties> = {
   body: { background: '#f5f0e8', minHeight: '100vh', fontFamily: "'Cormorant Garamond', Georgia, serif", color: '#1a1410' },
-  clockBanner: { background: '#1a1410', color: '#f5f0e8', padding: '12px 24px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 20, position: 'sticky', top: 0, zIndex: 50, flexWrap: 'wrap' },
+  clockBanner: { background: '#1a1410', color: '#f5f0e8', padding: '11px 24px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 20, position: 'sticky', top: 0, zIndex: 50, flexWrap: 'wrap' },
   clockLabel: { fontSize: 10, letterSpacing: '0.35em', color: '#d4c9b0', textTransform: 'uppercase', flexShrink: 0 },
-  clockDisplay: { fontSize: 22, fontWeight: 300, letterSpacing: '0.12em', color: '#fff', minWidth: 110, textAlign: 'center' },
+  clockDisplay: { fontSize: 20, fontWeight: 300, letterSpacing: '0.12em', color: '#fff', minWidth: 100, textAlign: 'center' },
   clockDate: { fontSize: 11, color: '#d4c9b0', letterSpacing: '0.2em', fontStyle: 'italic' },
   clockBtn: { background: 'transparent', border: '1px solid rgba(255,255,255,0.2)', color: '#d4c9b0', fontFamily: 'Georgia, serif', fontSize: 10, letterSpacing: '0.25em', padding: '5px 12px', cursor: 'pointer', flexShrink: 0 },
   clockWarning: { width: '100%', textAlign: 'center', fontSize: 11, color: '#e8a87c', letterSpacing: '0.15em', fontStyle: 'italic', paddingTop: 4 },
@@ -255,34 +252,34 @@ const s: Record<string, React.CSSProperties> = {
   modalActions: { display: 'flex', gap: 12 },
   btnPrimary: { flex: 1, padding: 12, background: '#1a1410', color: '#f5f0e8', border: 'none', fontFamily: 'Georgia, serif', fontSize: 12, letterSpacing: '0.3em', cursor: 'pointer', textTransform: 'uppercase' },
   btnSecondary: { flex: 1, padding: 12, background: 'transparent', border: '1px solid #d4c9b0', color: '#8a7f6e', fontFamily: 'Georgia, serif', fontSize: 12, letterSpacing: '0.3em', cursor: 'pointer', textTransform: 'uppercase' },
-  page: { maxWidth: 700, margin: '0 auto', padding: '64px 24px 100px', position: 'relative', zIndex: 1 },
-  masthead: { textAlign: 'center', marginBottom: 64 },
-  seal: { display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 52, height: 52, border: '2px solid #c0392b', borderRadius: 4, transform: 'rotate(-6deg)', marginBottom: 24, position: 'relative' },
-  sealChar: { fontFamily: 'serif', fontSize: 22, color: '#c0392b', lineHeight: 1 },
-  title: { fontFamily: 'Georgia, serif', fontSize: 'clamp(32px, 7vw, 60px)', fontWeight: 300, letterSpacing: '0.06em', color: '#1a1410', lineHeight: 1 },
-  rule: { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 14, margin: '20px auto', maxWidth: 260 },
+  page: { maxWidth: 680, margin: '0 auto', padding: '52px 24px 80px', position: 'relative', zIndex: 1 },
+  masthead: { textAlign: 'center', marginBottom: 44 },
+  seal: { display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 46, height: 46, border: '2px solid #c0392b', borderRadius: 4, transform: 'rotate(-6deg)', marginBottom: 16, position: 'relative' },
+  sealChar: { fontFamily: 'serif', fontSize: 20, color: '#c0392b', lineHeight: 1 },
+  title: { fontFamily: 'Georgia, serif', fontSize: 'clamp(28px, 5vw, 46px)', fontWeight: 300, letterSpacing: '0.06em', color: '#1a1410', lineHeight: 1.1, whiteSpace: 'nowrap' },
+  rule: { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 14, margin: '16px auto', maxWidth: 240 },
   ruleLine: { flex: 1, height: 1, background: '#d4c9b0' },
-  ruleTrigs: { fontSize: 18, color: '#8a7f6e', letterSpacing: 6 },
+  ruleTrigs: { fontSize: 16, color: '#8a7f6e', letterSpacing: 6 },
   tagline: { fontSize: 13, fontStyle: 'italic', color: '#8a7f6e', letterSpacing: '0.12em', fontWeight: 300 },
-  instrBox: { border: '1px solid #d4c9b0', background: 'white', padding: '28px 36px', marginBottom: 28, position: 'relative' },
+  instrBox: { border: '1px solid #d4c9b0', background: 'white', padding: '24px 32px', marginBottom: 20, position: 'relative' },
   instrBar: { position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: 'linear-gradient(90deg, #9a7b3a, transparent)' },
-  instrHeading: { fontFamily: 'Georgia, serif', fontSize: 11, letterSpacing: '0.4em', color: '#9a7b3a', textTransform: 'uppercase', marginBottom: 14 },
-  instrText: { fontSize: 15, lineHeight: 1.85, color: '#3d3528', fontWeight: 300 },
-  example: { marginTop: 14, padding: '12px 16px', background: '#f5f0e8', borderLeft: '2px solid #9a7b3a', fontSize: 14, fontStyle: 'italic', color: '#8a7f6e', lineHeight: 1.7 },
-  card: { background: 'white', border: '1px solid #d4c9b0', boxShadow: '0 4px 24px rgba(26,20,16,0.12), 0 20px 60px rgba(26,20,16,0.06)', padding: '52px 56px', position: 'relative' },
+  instrHeading: { fontFamily: 'Georgia, serif', fontSize: 11, letterSpacing: '0.4em', color: '#9a7b3a', textTransform: 'uppercase', marginBottom: 12 },
+  instrText: { fontSize: 15, lineHeight: 1.8, color: '#3d3528', fontWeight: 300 },
+  example: { marginTop: 12, padding: '10px 14px', background: '#f5f0e8', borderLeft: '2px solid #9a7b3a', fontSize: 13, fontStyle: 'italic', color: '#8a7f6e', lineHeight: 1.65 },
+  card: { background: 'white', border: '1px solid #d4c9b0', boxShadow: '0 4px 24px rgba(26,20,16,0.12), 0 20px 60px rgba(26,20,16,0.06)', padding: '40px 48px', position: 'relative' },
   cardBar: { position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: 'linear-gradient(90deg, #c0392b, #8b2a1e, transparent)' },
-  cardLabel: { fontFamily: 'Georgia, serif', fontSize: 10, fontWeight: 600, letterSpacing: '0.4em', color: '#8a7f6e', textTransform: 'uppercase', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 12 },
+  cardLabel: { fontFamily: 'Georgia, serif', fontSize: 10, fontWeight: 600, letterSpacing: '0.4em', color: '#8a7f6e', textTransform: 'uppercase', marginBottom: 18, display: 'flex', alignItems: 'center', gap: 12 },
   labelLine2: { flex: 1, height: 1, background: '#e8e0cc', display: 'block' },
-  textarea: { width: '100%', border: 'none', borderBottom: '1.5px solid #d4c9b0', background: 'transparent', fontFamily: 'Georgia, serif', fontSize: 19, fontWeight: 300, color: '#1a1410', lineHeight: 1.7, padding: '0 0 16px', resize: 'none', outline: 'none', minHeight: 88 },
-  cardFooter: { display: 'flex', alignItems: 'center', gap: 16, marginTop: 28, flexWrap: 'wrap' },
+  textarea: { width: '100%', border: 'none', borderBottom: '1.5px solid #d4c9b0', background: 'transparent', fontFamily: 'Georgia, serif', fontSize: 18, fontWeight: 300, color: '#1a1410', lineHeight: 1.7, padding: '0 0 14px', resize: 'none', outline: 'none', minHeight: 80 },
+  cardFooter: { display: 'flex', alignItems: 'center', gap: 16, marginTop: 22, flexWrap: 'wrap' },
   charCount: { fontSize: 11, color: '#8a7f6e', fontStyle: 'italic' },
   priceTag: { fontSize: 12, color: '#8a7f6e', letterSpacing: '0.15em', fontStyle: 'italic', marginLeft: 'auto' },
-  castBtn: { background: '#1a1410', color: '#f5f0e8', border: 'none', fontFamily: 'Georgia, serif', fontSize: 13, fontWeight: 600, letterSpacing: '0.3em', padding: '14px 32px', cursor: 'pointer' },
-  payNote: { fontSize: 11, color: '#8a7f6e', fontStyle: 'italic', marginTop: 16, letterSpacing: '0.05em' },
-  siteFooter: { textAlign: 'center', marginTop: 80 },
-  footerTrigs: { fontSize: 22, letterSpacing: 10, color: '#d4c9b0', marginBottom: 14, display: 'block' },
+  castBtn: { background: '#c0392b', color: '#fff', border: 'none', fontFamily: 'Georgia, serif', fontSize: 13, fontWeight: 600, letterSpacing: '0.3em', padding: '13px 28px', cursor: 'pointer' },
+  payNote: { fontSize: 11, color: '#8a7f6e', fontStyle: 'italic', marginTop: 14, letterSpacing: '0.05em' },
+  siteFooter: { textAlign: 'center', marginTop: 60 },
+  footerTrigs: { fontSize: 20, letterSpacing: 10, color: '#d4c9b0', marginBottom: 12, display: 'block' },
   footerCopy: { fontSize: 11, letterSpacing: '0.25em', color: '#8a7f6e', fontStyle: 'italic' },
   footerMethod: { fontFamily: 'Georgia, serif', fontSize: 10, letterSpacing: '0.4em', color: '#d4c9b0', marginTop: 8, textTransform: 'uppercase' },
-  footerLinks: { display: 'flex', justifyContent: 'center', gap: 16, marginTop: 16 },
+  footerLinks: { display: 'flex', justifyContent: 'center', gap: 16, marginTop: 14 },
   footerLink: { fontSize: 11, color: '#8a7f6e', textDecoration: 'none', letterSpacing: '0.15em' },
 }
