@@ -1,30 +1,38 @@
 import { NextRequest, NextResponse } from 'next/server'
-import crypto from 'crypto'
 
-function verifyCreemSignature(params: Record<string, string>, apiKey: string): boolean {
-  const { signature, ...rest } = params
-  const signatureString = Object.keys(rest)
-    .sort()
-    .filter(k => rest[k] != null && rest[k] !== '')
-    .map(k => `${k}=${rest[k]}`)
-    .join('&')
-  const expected = crypto.createHmac('sha256', apiKey).update(signatureString).digest('hex')
-  return expected === signature
+// Verify order with Lemon Squeezy API
+async function verifyOrder(orderId: string): Promise<boolean> {
+  try {
+    const res = await fetch(`https://api.lemonsqueezy.com/v1/orders/${orderId}`, {
+      headers: {
+        'Accept': 'application/vnd.api+json',
+        'Authorization': `Bearer ${process.env.LEMONSQUEEZY_API_KEY}`,
+      },
+    })
+    const data = await res.json()
+    const status = data?.data?.attributes?.status
+    return status === 'paid'
+  } catch {
+    return false
+  }
 }
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
-    const { checkoutId, orderId, question, hexNumber, hexName, hexZh, timeStr, signature } = body
+    const { orderId, question, hexNumber, hexName, hexZh, timeStr } = body
 
-    const isValid = verifyCreemSignature(
-      { checkout_id: checkoutId, order_id: orderId, signature },
-      process.env.CREEM_API_KEY!
-    )
-    if (!isValid) {
-      return NextResponse.json({ error: 'Invalid payment signature' }, { status: 403 })
+    if (!orderId) {
+      return NextResponse.json({ error: 'Missing order ID' }, { status: 400 })
     }
 
+    // Verify payment with Lemon Squeezy
+    const isPaid = await verifyOrder(orderId)
+    if (!isPaid) {
+      return NextResponse.json({ error: 'Payment not verified' }, { status: 403 })
+    }
+
+    // Payment verified — generate reading via DeepSeek
     const systemPrompt = `You are the Wú Oracle, an interpreter of the I Ching using Plum Blossom Numerology (梅花易数).
 
 The hexagram cast is #${hexNumber}: "${hexName}" (${hexZh}).
