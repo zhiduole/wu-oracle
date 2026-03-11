@@ -112,6 +112,11 @@ function SuccessContent() {
             hexName: hexData.en,
             hexZh: hexData.zh,
             timeStr,
+            upperTrigram: sessionStorage.getItem('wu_upper') || '',
+            lowerTrigram: sessionStorage.getItem('wu_lower') || '',
+            upperTrigramEn: sessionStorage.getItem('wu_upper_en') || '',
+            lowerTrigramEn: sessionStorage.getItem('wu_lower_en') || '',
+            movingLine: sessionStorage.getItem('wu_moving_line') || '',
           }),
         })
         const data = await res.json()
