@@ -80,9 +80,7 @@ function SuccessContent() {
   const [linesVisible, setLinesVisible] = useState<boolean[]>([])
 
   useEffect(() => {
-    const checkoutId = params.get('checkout_id') || ''
     const orderId = params.get('order_id') || ''
-    const signature = params.get('signature') || ''
 
     // Retrieve question + hex info stored before redirect
     const question = sessionStorage.getItem('wu_question') || ''
@@ -106,9 +104,9 @@ function SuccessContent() {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            checkoutId,
+            
             orderId,
-            signature,
+            
             question,
             hexNumber: hexData.n,
             hexName: hexData.en,
@@ -135,6 +133,7 @@ function SuccessContent() {
 
   // Typing effect
   useEffect(() => {
+    const orderId = params.get('order_id') || ''
     if (!reading) return
     let i = 0
     setDisplayed('')
