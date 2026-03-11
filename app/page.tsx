@@ -210,7 +210,7 @@ export default function HomePage() {
             <span style={s.charCount}>{question.length} / 400</span>
             <span style={s.priceTag}>$3.99 · one reading</span>
             <button style={s.castBtn} onClick={handleCast} disabled={!question.trim()}>
-              Cast the Coins →
+              Cast the Coins· $3.99 →
             </button>
           </div>
           <p style={s.payNote}>
