@@ -5,53 +5,53 @@
 
 ## What You Need Before Starting
 
-1. A [Creem](https://creem.io) account (free to sign up)
-2. An [Anthropic](https://console.anthropic.com) account with API key (min $5 credit)
+1. A [Lemon Squeezy](https://lemonsqueezy.com) account (free to sign up)
+2. A [DeepSeek](https://platform.deepseek.com) account with API key (min $2 credit)
 3. A [Vercel](https://vercel.com) account (free)
-4. A [GitHub](https://github.com) account (free) — needed to deploy to Vercel
-5. Your domain name (buy from Namecheap or Cloudflare)
+4. A [GitHub](https://github.com) account (free)
+5. Your domain name
 
 ---
 
-## Step 1 — Set Up Creem
+## Step 1 — Set Up Lemon Squeezy
 
-1. Log in to Creem dashboard
+1. Register at lemonsqueezy.com and complete store setup
 2. Go to **Products → Create Product**
-   - Name: "Wú Oracle Reading"
-   - Price: $3.99 USD
-   - Type: One-time payment
-   - Save and copy the **Product ID** (starts with `prod_`)
-3. Go to **Developers → API Keys**
-   - Copy your **API Key** (starts with `ck_live_`)
-4. Go to **Developers → Webhooks**
-   - Add webhook URL: `https://your-domain.com/api/webhook`
-   - Copy the **Webhook Secret**
+   - Name: Wú Oracle Reading
+   - Price: $3.99
+   - Type: Single payment
+3. After creating the product, click into the variant — copy the **Variant ID** from the URL
+4. Go to **Settings → Store** — copy your **Store ID** from the URL
+5. Go to **Settings → API → New API Key** — copy your **API Key**
+6. Go to **Settings → Webhooks → Add webhook**
+   - URL: `https://your-domain.com/api/webhook`
+   - Events: check `order_created`
+   - Copy the **Signing Secret**
 
 ---
 
-## Step 2 — Get Anthropic API Key
+## Step 2 — Get DeepSeek API Key
 
-1. Go to [console.anthropic.com](https://console.anthropic.com)
-2. Create account and add $5 credit
-3. Go to **API Keys → Create Key**
-4. Copy your key (starts with `sk-ant-`)
+1. Go to [platform.deepseek.com](https://platform.deepseek.com)
+2. Register and top up $2
+3. Go to **API Keys → Create Key** — copy your key
 
 ---
 
 ## Step 3 — Deploy to Vercel
 
-1. Push this project to a GitHub repository
-2. Go to [vercel.com](https://vercel.com) → **New Project** → Import your repo
-3. In **Environment Variables**, add these:
+1. Push this project to GitHub
+2. Go to vercel.com → **New Project** → import your repo
+3. Add these **Environment Variables**:
 
-| Key | Value |
-|-----|-------|
-| `CREEM_API_KEY` | `ck_live_...` |
-| `CREEM_WEBHOOK_SECRET` | your webhook secret |
-| `CREEM_PRODUCT_ID` | `prod_...` |
-| `ANTHROPIC_API_KEY` | `sk-ant-...` |
-| `NEXT_PUBLIC_SITE_URL` | `https://your-domain.com` |
-| `NEXT_PUBLIC_CREEM_PRODUCT_ID` | `prod_...` (same as above) |
+| Key | Where to find it |
+|-----|-----------------|
+| `LEMONSQUEEZY_API_KEY` | LS Settings → API |
+| `LEMONSQUEEZY_STORE_ID` | LS Settings → Store (from URL) |
+| `LEMONSQUEEZY_VARIANT_ID` | LS Product variant (from URL) |
+| `LEMONSQUEEZY_WEBHOOK_SECRET` | LS Settings → Webhooks |
+| `DEEPSEEK_API_KEY` | platform.deepseek.com → API Keys |
+| `NEXT_PUBLIC_SITE_URL` | your domain e.g. https://askwu.com |
 
 4. Click **Deploy**
 
@@ -59,65 +59,34 @@
 
 ## Step 4 — Connect Your Domain
 
-1. In Vercel → your project → **Settings → Domains**
-2. Add your custom domain
-3. Follow Vercel's instructions to update DNS at your domain registrar
-4. Wait 5–30 minutes for DNS to propagate
+1. Vercel → your project → **Settings → Domains** → add your domain
+2. Follow DNS instructions (add A record or CNAME at your domain registrar)
+3. Wait 10–30 mins for SSL certificate to activate
 
 ---
 
-## Step 5 — Update Creem Webhook URL
+## Step 5 — Update Webhook URL
 
-Once your domain is live, go back to Creem → Webhooks and update the URL to:
-`https://your-domain.com/api/webhook`
+Once domain is live, update the webhook URL in Lemon Squeezy to your real domain.
 
 ---
 
 ## Step 6 — Test
 
-1. In Creem dashboard, enable **Test Mode**
-2. Make a test purchase using card number `4242 4242 4242 4242`
-3. Confirm you're redirected to the success page with a reading
+1. Enable **Test Mode** in Lemon Squeezy
+2. Use test card `4242 4242 4242 4242`
+3. Confirm you land on success page with a reading
 4. Disable Test Mode when ready to go live
 
 ---
 
-## File Structure
+## How Payment Works
 
-```
-wu-oracle/
-├── app/
-│   ├── page.tsx              # Main oracle page
-│   ├── layout.tsx            # HTML head, fonts
-│   ├── success/page.tsx      # Post-payment reading page
-│   ├── privacy/page.tsx      # Privacy policy
-│   ├── terms/page.tsx        # Terms of service
-│   └── api/
-│       ├── checkout/route.ts # Creates Creem checkout session
-│       ├── webhook/route.ts  # Receives Creem payment events
-│       └── reading/route.ts  # Verifies payment + calls Anthropic
-├── .env.example              # Copy to .env.local, fill in keys
-├── package.json
-└── next.config.js
-```
-
----
-
-## How It Works
-
-1. User fills in question → clicks "Cast the Coins"
-2. Question + hexagram index saved to `sessionStorage`
-3. User redirected to Creem checkout ($3.99)
-4. User pays → Creem redirects back to `/success?checkout_id=...&signature=...`
-5. Success page reads question from `sessionStorage`
-6. Calls `/api/reading` with checkout ID + signature
-7. Server verifies Creem signature (prevents bypassing payment)
-8. Server calls Anthropic API to generate reading
-9. Reading returned and displayed with typing animation
-
----
-
-## Support
-
-If users can't access their reading after payment, they can contact you.
-Creem stores all transaction records in your dashboard.
+1. User fills question → clicks Cast the Coins
+2. Question + hexagram saved to sessionStorage
+3. Redirected to Lemon Squeezy checkout ($3.99)
+4. User pays → redirected back to `/success?order_id=...`
+5. Success page calls `/api/reading` with order ID
+6. Server verifies order is `paid` via Lemon Squeezy API
+7. Server calls DeepSeek to generate reading
+8. Reading displayed with typing animation
