@@ -91,7 +91,7 @@ export default function HomePage() {
   const [modalOpen, setModalOpen] = useState(false)
   const [modalTime, setModalTime] = useState('')
   const [timeAdjusted, setTimeAdjusted] = useState(false)
-  const productId = process.env.NEXT_PUBLIC_CREEM_PRODUCT_ID || ''
+  
 
   // Clock
   useEffect(() => {
@@ -124,9 +124,9 @@ export default function HomePage() {
     sessionStorage.setItem('wu_question', question)
     sessionStorage.setItem('wu_hex_index', String(hexIdx))
     sessionStorage.setItem('wu_time', formatTime(d))
-    // Redirect to Creem checkout
+    // Redirect to Lemon Squeezy checkout
     const successUrl = `${window.location.origin}/success`
-    window.location.href = `/api/checkout?productId=${productId}&successUrl=${encodeURIComponent(successUrl)}`
+    window.location.href = `/api/checkout?successUrl=${encodeURIComponent(successUrl)}`
   }
 
   return (
