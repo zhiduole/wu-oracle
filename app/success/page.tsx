@@ -80,9 +80,10 @@ function SuccessContent() {
   const [linesVisible, setLinesVisible] = useState<boolean[]>([])
 
   useEffect(() => {
+    const checkoutId = params.get('checkout_id') || ''
     const orderId = params.get('order_id') || ''
+    const signature = params.get('signature') || ''
 
-    // Retrieve question + hex info stored before redirect
     const question = sessionStorage.getItem('wu_question') || ''
     const hexIndex = parseInt(sessionStorage.getItem('wu_hex_index') || '0')
     const timeStr = sessionStorage.getItem('wu_time') || ''
@@ -90,7 +91,6 @@ function SuccessContent() {
     const hexData = HEXAGRAMS[hexIndex % 64]
     setHex(hexData)
 
-    // Animate lines in
     const timers: ReturnType<typeof setTimeout>[] = []
     hexData.lines.forEach((_, i) => {
       timers.push(setTimeout(() => {
@@ -104,9 +104,9 @@ function SuccessContent() {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            
+            checkoutId,
             orderId,
-            
+            signature,
             question,
             hexNumber: hexData.n,
             hexName: hexData.en,
@@ -131,9 +131,7 @@ function SuccessContent() {
     return () => timers.forEach(clearTimeout)
   }, [params])
 
-  // Typing effect
   useEffect(() => {
-    const orderId = params.get('order_id') || ''
     if (!reading) return
     let i = 0
     setDisplayed('')
@@ -153,7 +151,6 @@ function SuccessContent() {
         <div style={styles.card}>
           <div style={styles.redBar} />
           <div style={styles.hexHeader}>
-            {/* Hex lines */}
             <div style={styles.hexLines}>
               {hex.lines.map((yang, i) => (
                 <div key={i} style={styles.hexLine}>
