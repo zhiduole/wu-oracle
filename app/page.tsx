@@ -258,8 +258,7 @@ export default function HomePage() {
         {/* Footer */}
         <footer style={s.siteFooter}>
           <span style={s.footerTrigs}>☰ ☱ ☲ ☳ ☴ ☵ ☶ ☷</span>
-          <p style={s.footerCopy}>The Book of Changes has been consulted for three thousand years.</p>
-          <p style={s.footerMethod}>Method: Plum Blossom Numerology · Shao Yong, Song Dynasty</p>
+          <p style={s.footerCopy}>The Book of Changes has been consulted for three thousand years.</p>          
           <div style={s.footerLinks}>
             <a href="mailto:iamxiaofeng.xu@gmail.com" style={s.footerLink}>iamxiaofeng.xu@gmail.com</a>
             <span style={{ color: '#d4c9b0' }}>·</span>
