@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Failed to create checkout' }, { status: 500 })
     }
 
-    return NextResponse.json({ checkoutUrl })
+    return NextResponse.redirect(checkoutUrl)
   } catch (err) {
     console.error('Checkout error:', err)
     return NextResponse.json({ error: 'Server error' }, { status: 500 })
