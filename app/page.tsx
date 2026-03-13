@@ -1,8 +1,7 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 
-// ── Hexagram data ──
 const HEXAGRAMS = [
   {n:1,en:"The Creative",zh:"乾 · Qián",sym:"䷀",lines:[1,1,1,1,1,1]},
   {n:2,en:"The Receptive",zh:"坤 · Kūn",sym:"䷁",lines:[0,0,0,0,0,0]},
@@ -91,9 +90,7 @@ export default function HomePage() {
   const [modalOpen, setModalOpen] = useState(false)
   const [modalTime, setModalTime] = useState('')
   const [timeAdjusted, setTimeAdjusted] = useState(false)
-  
 
-  // Clock
   useEffect(() => {
     const tick = () => {
       const d = new Date(Date.now() + timeOffset)
@@ -118,42 +115,33 @@ export default function HomePage() {
 
   function handleCast() {
     if (!question.trim()) return
-    // Calculate hexagram now, store in sessionStorage before redirect
     const hexIdx = getHexIndex(question, timeOffset)
     const d = new Date(Date.now() + timeOffset)
     sessionStorage.setItem('wu_question', question)
     sessionStorage.setItem('wu_hex_index', String(hexIdx))
     sessionStorage.setItem('wu_time', formatTime(d))
-    // Redirect to Lemon Squeezy checkout
     const successUrl = `${window.location.origin}/success`
     window.location.href = `/api/checkout?successUrl=${encodeURIComponent(successUrl)}`
   }
 
   return (
     <div style={s.body}>
-      {/* Clock banner */}
       <div style={s.clockBanner}>
         <span style={s.clockLabel}>Your local time</span>
         <span style={s.clockDisplay}>{clockTime || '--:--:--'}</span>
         <span style={s.clockDate}>{clockDate}</span>
         <button style={s.clockBtn} onClick={() => setModalOpen(true)}>Not correct? Adjust →</button>
         {timeAdjusted && (
-          <div style={s.clockWarning}>
-            ⚠ Time adjusted. The hexagram will be cast using your corrected local time.
-          </div>
+          <div style={s.clockWarning}>⚠ Time adjusted. The hexagram will be cast using your corrected local time.</div>
         )}
       </div>
 
-      {/* Modal */}
       {modalOpen && (
         <div style={s.overlay} onClick={e => { if (e.target === e.currentTarget) setModalOpen(false) }}>
           <div style={s.modal}>
             <div style={s.modalBar} />
             <p style={s.modalTitle}>Adjust Your Local Time</p>
-            <p style={s.modalNote}>
-              In Plum Blossom Numerology, the exact hour of your question shapes the hexagram cast.
-              If the clock above does not match your local time, correct it here before proceeding.
-            </p>
+            <p style={s.modalNote}>In Plum Blossom Numerology, the exact hour of your question shapes the hexagram cast. If the clock above does not match your local time, correct it here before proceeding.</p>
             <label style={s.modalLabel}>Enter your current local time</label>
             <input type="time" style={s.timeInput} value={modalTime} onChange={e => setModalTime(e.target.value)} />
             <div style={s.modalActions}>
@@ -165,7 +153,6 @@ export default function HomePage() {
       )}
 
       <div style={s.page}>
-        {/* Masthead */}
         <header style={s.masthead}>
           <div style={s.seal}><span style={s.sealChar}>易</span></div>
           <h1 style={s.title}>Wú · <em style={{ color: '#c0392b', fontStyle: 'normal' }}>The Book of Changes</em></h1>
@@ -177,27 +164,17 @@ export default function HomePage() {
           <p style={s.tagline}>Ancient Chinese divination for the crossroads of now</p>
         </header>
 
-        {/* Before You Ask */}
         <div style={s.instrBox}>
           <div style={s.instrBar} />
           <p style={s.instrHeading}>Before You Ask</p>
-          <p style={s.instrText}>
-            Take three slow, deep breaths. Clear your mind completely. Then bring your full attention
-            to your question — not just the words, but the weight of it.
-          </p>
-          <p style={{ ...s.instrText, marginTop: 12 }}>
-            The oracle answers best when your question is specific and personal.
-            Vague questions receive vague answers — the more clearly you name your situation,
-            the more useful the reading will be.
-          </p>
+          <p style={s.instrText}>Take three slow, deep breaths. Clear your mind completely. Then bring your full attention to your question — not just the words, but the weight of it.</p>
+          <p style={{ ...s.instrText, marginTop: 12 }}>The oracle answers best when your question is specific and personal. Vague questions receive vague answers — the more clearly you name your situation, the more useful the reading will be.</p>
           <div style={s.example}>
             <strong>Instead of:</strong> "What should I do about my job?"<br />
-            <strong>Ask:</strong> "I have been offered a new position at a different company with higher pay
-            but more risk. Should I leave my current job and take it?"
+            <strong>Ask:</strong> "I have been offered a new position at a different company with higher pay but more risk. Should I leave my current job and take it?"
           </div>
         </div>
 
-        {/* Divination card */}
         <div style={s.card}>
           <div style={s.cardBar} />
           <p style={s.cardLabel}>Lay your question before the Oracle <span style={s.labelLine2} /></p>
@@ -213,20 +190,19 @@ export default function HomePage() {
             <span style={s.charCount}>{question.length} / 400</span>
             <div style={s.priceTag}>$3.99 · one reading</div>
             <button style={s.castBtn} onClick={handleCast} disabled={!question.trim()}>
-              Cast the Coins →
+              Cast the Coins · $3.99 →
             </button>
           </div>
-          <p style={s.payNote}>
-            Secure payment via Creem · Visa, Mastercard, Apple Pay, Google Pay accepted
-          </p>
+          <p style={s.payNote}>Secure payment via Creem · Visa, Mastercard, Apple Pay, Google Pay accepted</p>
         </div>
 
-        {/* Footer */}
         <footer style={s.siteFooter}>
           <span style={s.footerTrigs}>☰ ☱ ☲ ☳ ☴ ☵ ☶ ☷</span>
           <p style={s.footerCopy}>The Book of Changes has been consulted for three thousand years.</p>
           <p style={s.footerMethod}>Method: Plum Blossom Numerology · Shao Yong, Song Dynasty</p>
           <div style={s.footerLinks}>
+            <a href="mailto:xuxiaofeng0@gmail.com" style={s.footerLink}>xuxiaofeng0@gmail.com</a>
+            <span style={{ color: '#d4c9b0' }}>·</span>
             <a href="/privacy" style={s.footerLink}>Privacy Policy</a>
             <span style={{ color: '#d4c9b0' }}>·</span>
             <a href="/terms" style={s.footerLink}>Terms of Service</a>
@@ -277,7 +253,7 @@ const s: Record<string, React.CSSProperties> = {
   cardFooter: { display: 'flex', alignItems: 'center', gap: 16, marginTop: 28, flexWrap: 'wrap' },
   charCount: { fontSize: 11, color: '#8a7f6e', fontStyle: 'italic' },
   priceTag: { fontSize: 12, color: '#8a7f6e', letterSpacing: '0.15em', fontStyle: 'italic', marginLeft: 'auto' },
-  castBtn: { background: '#1a1410', color: '#f5f0e8', border: 'none', fontFamily: 'Georgia, serif', fontSize: 13, fontWeight: 600, letterSpacing: '0.3em', padding: '14px 32px', cursor: 'pointer' },
+  castBtn: { background: '#c0392b', color: '#f5f0e8', border: 'none', fontFamily: 'Georgia, serif', fontSize: 13, fontWeight: 600, letterSpacing: '0.3em', padding: '14px 32px', cursor: 'pointer' },
   payNote: { fontSize: 11, color: '#8a7f6e', fontStyle: 'italic', marginTop: 16, letterSpacing: '0.05em' },
   siteFooter: { textAlign: 'center', marginTop: 80 },
   footerTrigs: { fontSize: 22, letterSpacing: 10, color: '#d4c9b0', marginBottom: 14, display: 'block' },
