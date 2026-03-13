@@ -184,10 +184,15 @@ function SuccessContent() {
           </div>
 
           {loading && (
-            <div style={styles.coins}>
-              {['☰','☷','☵'].map((s, i) => (
-                <div key={i} style={styles.coin}>{s}</div>
-              ))}
+            <div>
+              <div style={styles.coins}>
+                {['☰','☷','☵'].map((s, i) => (
+                  <div key={i} style={styles.coin}>{s}</div>
+                ))}
+              </div>
+              <p style={{ textAlign: 'center', fontSize: 13, fontStyle: 'italic', color: '#8a7f6e', letterSpacing: '0.15em', marginTop: 12 }}>
+                The oracle is consulting the hexagram… please wait a moment.
+              </p>
             </div>
           )}
 
