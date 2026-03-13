@@ -210,7 +210,6 @@ function SuccessContent() {
               <div style={styles.footer}>
                 <span style={styles.footerSeal}>易</span>
                 <p style={styles.footerNote}>
-                  Plum Blossom Numerology uses the time and nature of your question to determine the hexagram.
                   The I Ching does not command — it illuminates the pattern already present in your situation.
                 </p>
               </div>
