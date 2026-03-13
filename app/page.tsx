@@ -145,7 +145,7 @@ export default function HomePage() {
     setModalOpen(false)
   }
 
- async function handleCast() {
+ function handleCast() {
     if (!question.trim()) return
     const cast = castHexagram(question, timeOffset)
     const d    = new Date(Date.now() + timeOffset)
@@ -158,13 +158,7 @@ export default function HomePage() {
     sessionStorage.setItem('wu_lower_en',    cast.lowerEn)
     sessionStorage.setItem('wu_moving_line', String(cast.movingLine))
     const successUrl = `${window.location.origin}/success`
-      const res = await fetch(`/api/checkout?successUrl=${encodeURIComponent(successUrl)}`)
-      const data = await res.json()
-      if (data.checkoutUrl) {
-        window.location.href = data.checkoutUrl
-      } else {
-        alert('Something went wrong. Please try again.')
-      }
+    window.location.href = `/api/checkout?successUrl=${encodeURIComponent(successUrl)}`
 
   return (
     <div style={s.body}>
