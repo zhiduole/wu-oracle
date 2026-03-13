@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-export async function GET(req: NextRequest) {
+export async function POST(req: NextRequest) {
   const { searchParams } = new URL(req.url)
   const successUrl = searchParams.get('successUrl') || `${process.env.NEXT_PUBLIC_SITE_URL}/success`
 
