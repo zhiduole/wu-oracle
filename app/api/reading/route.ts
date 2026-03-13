@@ -21,13 +21,13 @@ export async function POST(req: NextRequest) {
       upperTrigram, lowerTrigram, upperTrigramEn, lowerTrigramEn, movingLine,
     } = body
 
-    const isValid = verifyCreemSignature(
-      { checkout_id: checkoutId, order_id: orderId, signature },
-      process.env.CREEM_API_KEY!
-    )
-    if (!isValid) {
-      return NextResponse.json({ error: 'Invalid payment signature' }, { status: 403 })
-    }
+   // const isValid = verifyCreemSignature(
+   //   { checkout_id: checkoutId, order_id: orderId, signature },
+   //   process.env.CREEM_API_KEY!
+   // )
+   // if (!isValid) {
+   //   return NextResponse.json({ error: 'Invalid payment signature' }, { status: 403 })
+   // }
 
     const systemPrompt = `You are the Wú Oracle, an interpreter of the I Ching using Plum Blossom Numerology (梅花易数).
 
