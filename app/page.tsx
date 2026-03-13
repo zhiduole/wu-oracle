@@ -199,7 +199,6 @@ export default function HomePage() {
         <footer style={s.siteFooter}>
           <span style={s.footerTrigs}>☰ ☱ ☲ ☳ ☴ ☵ ☶ ☷</span>
           <p style={s.footerCopy}>The Book of Changes has been consulted for three thousand years.</p>
-          <p style={s.footerMethod}>Method: Plum Blossom Numerology · Shao Yong, Song Dynasty</p>
           <div style={s.footerLinks}>
             <a href="mailto:xuxiaofeng0@gmail.com" style={s.footerLink}>xuxiaofeng0@gmail.com</a>
             <span style={{ color: '#d4c9b0' }}>·</span>
