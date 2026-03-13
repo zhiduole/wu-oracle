@@ -1,7 +1,8 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 
+// ── Hexagram data ──
 const HEXAGRAMS = [
   {n:1,en:"The Creative",zh:"乾 · Qián",sym:"䷀",lines:[1,1,1,1,1,1]},
   {n:2,en:"The Receptive",zh:"坤 · Kūn",sym:"䷁",lines:[0,0,0,0,0,0]},
@@ -69,42 +70,10 @@ const HEXAGRAMS = [
   {n:64,en:"Before Completion",zh:"未济 · Wèi Jì",sym:"䷿",lines:[1,0,1,0,1,0]},
 ]
 
-// 先天八卦数对应表
-const TRIGRAM_NAMES = ['','乾','兑','离','震','巽','坎','艮','坤']
-const TRIGRAM_EN    = ['','Heaven','Lake','Fire','Thunder','Wind','Water','Mountain','Earth']
-
-// 上卦(行) × 下卦(列) → 卦序(1-64)
-const HEX_TABLE: number[][] = [
-  [0,  0,  0,  0,  0,  0,  0,  0,  0],
-  [0,  1, 43, 14, 34,  9,  5, 26, 11],
-  [0, 10, 58, 38, 54, 61, 60, 41, 19],
-  [0, 13, 49, 30, 55, 37, 63, 22, 36],
-  [0, 25, 17, 21, 51, 42,  3, 27, 24],
-  [0, 44, 28, 50, 32, 57, 48, 18, 46],
-  [0,  6, 47, 64, 40, 59, 29,  4,  7],
-  [0, 33, 31, 56, 62, 53, 39, 52, 15],
-  [0, 12, 45, 35, 16, 20,  8, 23,  2],
-]
-
-function castHexagram(question: string, offsetMs: number) {
+function getHexIndex(question: string, offsetMs: number): number {
   const d = new Date(Date.now() + offsetMs)
-  const year    = d.getFullYear()
-  const month   = d.getMonth() + 1
-  const day     = d.getDate()
-  const shichen = Math.floor(d.getHours() / 2) + 1 // 时辰1-12
-  const qLen    = question.trim().length
-  const total   = year + month + day + shichen
-
-  let upper = total % 8;          if (upper === 0) upper = 8
-  let lower = (total + qLen) % 8; if (lower === 0) lower = 8
-  let movingLine = (total + qLen) % 6; if (movingLine === 0) movingLine = 6
-
-  const hexNum   = HEX_TABLE[upper][lower]
-  const hexIndex = hexNum - 1
-
-  return { hexIndex, hexNum, upper, lower, movingLine,
-    upperName: TRIGRAM_NAMES[upper], lowerName: TRIGRAM_NAMES[lower],
-    upperEn: TRIGRAM_EN[upper], lowerEn: TRIGRAM_EN[lower] }
+  const seed = d.getHours() * 3600 + d.getMinutes() * 60 + d.getSeconds() + question.length
+  return seed % 64
 }
 
 function formatTime(d: Date) {
@@ -115,14 +84,16 @@ function formatDate(d: Date) {
 }
 
 export default function HomePage() {
-  const [question, setQuestion]     = useState('')
+  const [question, setQuestion] = useState('')
   const [timeOffset, setTimeOffset] = useState(0)
-  const [clockTime, setClockTime]   = useState('')
-  const [clockDate, setClockDate]   = useState('')
-  const [modalOpen, setModalOpen]   = useState(false)
-  const [modalTime, setModalTime]   = useState('')
+  const [clockTime, setClockTime] = useState('')
+  const [clockDate, setClockDate] = useState('')
+  const [modalOpen, setModalOpen] = useState(false)
+  const [modalTime, setModalTime] = useState('')
   const [timeAdjusted, setTimeAdjusted] = useState(false)
+  
 
+  // Clock
   useEffect(() => {
     const tick = () => {
       const d = new Date(Date.now() + timeOffset)
@@ -145,20 +116,18 @@ export default function HomePage() {
     setModalOpen(false)
   }
 
- function handleCast() {
+  function handleCast() {
     if (!question.trim()) return
-    const cast = castHexagram(question, timeOffset)
-    const d    = new Date(Date.now() + timeOffset)
-    sessionStorage.setItem('wu_question',    question)
-    sessionStorage.setItem('wu_hex_index',   String(cast.hexIndex))
-    sessionStorage.setItem('wu_time',        formatTime(d))
-    sessionStorage.setItem('wu_upper',       cast.upperName)
-    sessionStorage.setItem('wu_lower',       cast.lowerName)
-    sessionStorage.setItem('wu_upper_en',    cast.upperEn)
-    sessionStorage.setItem('wu_lower_en',    cast.lowerEn)
-    sessionStorage.setItem('wu_moving_line', String(cast.movingLine))
+    // Calculate hexagram now, store in sessionStorage before redirect
+    const hexIdx = getHexIndex(question, timeOffset)
+    const d = new Date(Date.now() + timeOffset)
+    sessionStorage.setItem('wu_question', question)
+    sessionStorage.setItem('wu_hex_index', String(hexIdx))
+    sessionStorage.setItem('wu_time', formatTime(d))
+    // Redirect to Lemon Squeezy checkout
     const successUrl = `${window.location.origin}/success`
     window.location.href = `/api/checkout?successUrl=${encodeURIComponent(successUrl)}`
+  }
 
   return (
     <div style={s.body}>
@@ -175,7 +144,7 @@ export default function HomePage() {
         )}
       </div>
 
-      {/* Time adjust modal */}
+      {/* Modal */}
       {modalOpen && (
         <div style={s.overlay} onClick={e => { if (e.target === e.currentTarget) setModalOpen(false) }}>
           <div style={s.modal}>
@@ -198,9 +167,7 @@ export default function HomePage() {
       <div style={s.page}>
         {/* Masthead */}
         <header style={s.masthead}>
-          <div style={{ textAlign: 'center', marginBottom: 16 }}>
-            <div style={s.seal}><span style={s.sealChar}>易</span></div>
-          </div>
+          <div style={s.seal}><span style={s.sealChar}>易</span></div>
           <h1 style={s.title}>Wú · <em style={{ color: '#c0392b', fontStyle: 'normal' }}>The Book of Changes</em></h1>
           <div style={s.rule}>
             <div style={s.ruleLine} />
@@ -244,9 +211,9 @@ export default function HomePage() {
           />
           <div style={s.cardFooter}>
             <span style={s.charCount}>{question.length} / 400</span>
-            <span style={s.priceTag}>$3.99 · one reading</span>
+            <div style={s.priceTag}>$3.99 · one reading</div>
             <button style={s.castBtn} onClick={handleCast} disabled={!question.trim()}>
-              Cast the Coins · $3.99 →
+              Cast the Coins →
             </button>
           </div>
           <p style={s.payNote}>
@@ -257,10 +224,9 @@ export default function HomePage() {
         {/* Footer */}
         <footer style={s.siteFooter}>
           <span style={s.footerTrigs}>☰ ☱ ☲ ☳ ☴ ☵ ☶ ☷</span>
-          <p style={s.footerCopy}>The Book of Changes has been consulted for three thousand years.</p>          
+          <p style={s.footerCopy}>The Book of Changes has been consulted for three thousand years.</p>
+          <p style={s.footerMethod}>Method: Plum Blossom Numerology · Shao Yong, Song Dynasty</p>
           <div style={s.footerLinks}>
-            <a href="mailto:xuxiaofeng0@gmail.com" style={s.footerLink}>xuxiaofeng0@gmail.com</a>
-            <span style={{ color: '#d4c9b0' }}>·</span>
             <a href="/privacy" style={s.footerLink}>Privacy Policy</a>
             <span style={{ color: '#d4c9b0' }}>·</span>
             <a href="/terms" style={s.footerLink}>Terms of Service</a>
@@ -290,11 +256,11 @@ const s: Record<string, React.CSSProperties> = {
   btnPrimary: { flex: 1, padding: 12, background: '#1a1410', color: '#f5f0e8', border: 'none', fontFamily: 'Georgia, serif', fontSize: 12, letterSpacing: '0.3em', cursor: 'pointer', textTransform: 'uppercase' },
   btnSecondary: { flex: 1, padding: 12, background: 'transparent', border: '1px solid #d4c9b0', color: '#8a7f6e', fontFamily: 'Georgia, serif', fontSize: 12, letterSpacing: '0.3em', cursor: 'pointer', textTransform: 'uppercase' },
   page: { maxWidth: 700, margin: '0 auto', padding: '64px 24px 100px', position: 'relative', zIndex: 1 },
-  masthead: { textAlign: 'center', marginBottom: 44 },
-  seal: { display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 46, height: 46, border: '2px solid #c0392b', borderRadius: 4, transform: 'rotate(-6deg)', marginBottom: 16, position: 'relative' },
-  sealChar: { fontFamily: 'serif', fontSize: 20, color: '#c0392b', lineHeight: 1 },
-  title: { fontFamily: 'Georgia, serif', fontSize: 'clamp(28px, 5vw, 46px)', fontWeight: 300, letterSpacing: '0.06em', color: '#1a1410', lineHeight: 1.1, whiteSpace: 'nowrap' },
-  rule: { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 14, margin: '16px auto', maxWidth: 260 },
+  masthead: { textAlign: 'center', marginBottom: 64 },
+  seal: { display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 52, height: 52, border: '2px solid #c0392b', borderRadius: 4, transform: 'rotate(-6deg)', marginBottom: 24, position: 'relative' },
+  sealChar: { fontFamily: 'serif', fontSize: 22, color: '#c0392b', lineHeight: 1 },
+  title: { fontFamily: 'Georgia, serif', fontSize: 'clamp(32px, 7vw, 60px)', fontWeight: 300, letterSpacing: '0.06em', color: '#1a1410', lineHeight: 1 },
+  rule: { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 14, margin: '20px auto', maxWidth: 260 },
   ruleLine: { flex: 1, height: 1, background: '#d4c9b0' },
   ruleTrigs: { fontSize: 18, color: '#8a7f6e', letterSpacing: 6 },
   tagline: { fontSize: 13, fontStyle: 'italic', color: '#8a7f6e', letterSpacing: '0.12em', fontWeight: 300 },
@@ -311,7 +277,7 @@ const s: Record<string, React.CSSProperties> = {
   cardFooter: { display: 'flex', alignItems: 'center', gap: 16, marginTop: 28, flexWrap: 'wrap' },
   charCount: { fontSize: 11, color: '#8a7f6e', fontStyle: 'italic' },
   priceTag: { fontSize: 12, color: '#8a7f6e', letterSpacing: '0.15em', fontStyle: 'italic', marginLeft: 'auto' },
-  castBtn: { background: '#c0392b', color: '#fff', border: 'none', fontFamily: 'Georgia, serif', fontSize: 13, fontWeight: 600, letterSpacing: '0.3em', padding: '14px 32px', cursor: 'pointer' },
+  castBtn: { background: '#1a1410', color: '#f5f0e8', border: 'none', fontFamily: 'Georgia, serif', fontSize: 13, fontWeight: 600, letterSpacing: '0.3em', padding: '14px 32px', cursor: 'pointer' },
   payNote: { fontSize: 11, color: '#8a7f6e', fontStyle: 'italic', marginTop: 16, letterSpacing: '0.05em' },
   siteFooter: { textAlign: 'center', marginTop: 80 },
   footerTrigs: { fontSize: 22, letterSpacing: 10, color: '#d4c9b0', marginBottom: 14, display: 'block' },
@@ -319,6 +285,4 @@ const s: Record<string, React.CSSProperties> = {
   footerMethod: { fontFamily: 'Georgia, serif', fontSize: 10, letterSpacing: '0.4em', color: '#d4c9b0', marginTop: 8, textTransform: 'uppercase' },
   footerLinks: { display: 'flex', justifyContent: 'center', gap: 16, marginTop: 16 },
   footerLink: { fontSize: 11, color: '#8a7f6e', textDecoration: 'none', letterSpacing: '0.15em' },
-
 }
- export default HomePage
