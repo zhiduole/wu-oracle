@@ -319,4 +319,6 @@ const s: Record<string, React.CSSProperties> = {
   footerMethod: { fontFamily: 'Georgia, serif', fontSize: 10, letterSpacing: '0.4em', color: '#d4c9b0', marginTop: 8, textTransform: 'uppercase' },
   footerLinks: { display: 'flex', justifyContent: 'center', gap: 16, marginTop: 16 },
   footerLink: { fontSize: 11, color: '#8a7f6e', textDecoration: 'none', letterSpacing: '0.15em' },
+
 }
+ export default HomePage
