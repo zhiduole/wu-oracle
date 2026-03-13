@@ -235,7 +235,7 @@ const s: Record<string, React.CSSProperties> = {
   masthead: { textAlign: 'center', marginBottom: 64 },
   seal: { display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 52, height: 52, border: '2px solid #c0392b', borderRadius: 4, transform: 'rotate(-6deg)', marginBottom: 24, position: 'relative' },
   sealChar: { fontFamily: 'serif', fontSize: 22, color: '#c0392b', lineHeight: 1 },
-  title: { fontFamily: 'Georgia, serif', fontSize: 'clamp(32px, 7vw, 60px)', fontWeight: 300, letterSpacing: '0.06em', color: '#1a1410', lineHeight: 1 },
+ title: { fontFamily: 'Georgia, serif', fontSize: 'clamp(28px, 5vw, 46px)', fontWeight: 300, letterSpacing: '0.06em', color: '#1a1410', lineHeight: 1.1, whiteSpace: 'nowrap' },
   rule: { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 14, margin: '20px auto', maxWidth: 260 },
   ruleLine: { flex: 1, height: 1, background: '#d4c9b0' },
   ruleTrigs: { fontSize: 18, color: '#8a7f6e', letterSpacing: 6 },
