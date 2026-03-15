@@ -69,10 +69,46 @@ const HEXAGRAMS = [
   {n:64,en:"Before Completion",zh:"未济 · Wèi Jì",sym:"䷿",lines:[1,0,1,0,1,0]},
 ]
 
-function getHexIndex(question: string, offsetMs: number): number {
+// 先天八卦数对应名称
+const TRIGRAM_NAMES = ['','乾','兑','离','震','巽','坎','艮','坤']
+const TRIGRAM_EN    = ['','Heaven','Lake','Fire','Thunder','Wind','Water','Mountain','Earth']
+
+// 上卦×下卦 → 卦序(1-64)
+const HEX_TABLE = [
+  [0,  0,  0,  0,  0,  0,  0,  0,  0],
+  [0,  1, 43, 14, 34,  9,  5, 26, 11],
+  [0, 10, 58, 38, 54, 61, 60, 41, 19],
+  [0, 13, 49, 30, 55, 37, 63, 22, 36],
+  [0, 25, 17, 21, 51, 42,  3, 27, 24],
+  [0, 44, 28, 50, 32, 57, 48, 18, 46],
+  [0,  6, 47, 64, 40, 59, 29,  4,  7],
+  [0, 33, 31, 56, 62, 53, 39, 52, 15],
+  [0, 12, 45, 35, 16, 20,  8, 23,  2],
+]
+
+function castHexagram(question: string, offsetMs: number) {
   const d = new Date(Date.now() + offsetMs)
-  const seed = d.getHours() * 3600 + d.getMinutes() * 60 + d.getSeconds() + question.length
-  return seed % 64
+  const year    = d.getFullYear()
+  const month   = d.getMonth() + 1
+  const day     = d.getDate()
+  const shichen = Math.floor(d.getHours() / 2) + 1
+  const total   = year + month + day + shichen
+  const qLen    = question.trim().length
+
+  let upper = total % 8;           if (upper === 0) upper = 8
+  let lower = (total + qLen) % 8;  if (lower === 0) lower = 8
+  let movingLine = (total + qLen) % 6; if (movingLine === 0) movingLine = 6
+
+  const hexNum   = HEX_TABLE[upper][lower]
+  const hexIndex = hexNum - 1
+
+  return {
+    hexIndex, hexNum, upper, lower, movingLine,
+    upperName: TRIGRAM_NAMES[upper],
+    lowerName: TRIGRAM_NAMES[lower],
+    upperEn: TRIGRAM_EN[upper],
+    lowerEn: TRIGRAM_EN[lower],
+  }
 }
 
 function formatTime(d: Date) {
@@ -115,11 +151,16 @@ export default function HomePage() {
 
   function handleCast() {
     if (!question.trim()) return
-    const hexIdx = getHexIndex(question, timeOffset)
     const d = new Date(Date.now() + timeOffset)
+    const cast = castHexagram(question, timeOffset)
     sessionStorage.setItem('wu_question', question)
-    sessionStorage.setItem('wu_hex_index', String(hexIdx))
+    sessionStorage.setItem('wu_hex_index', String(cast.hexIndex))
     sessionStorage.setItem('wu_time', formatTime(d))
+    sessionStorage.setItem('wu_upper', cast.upperName)
+    sessionStorage.setItem('wu_lower', cast.lowerName)
+    sessionStorage.setItem('wu_upper_en', cast.upperEn)
+    sessionStorage.setItem('wu_lower_en', cast.lowerEn)
+    sessionStorage.setItem('wu_moving_line', String(cast.movingLine))
     const successUrl = `${window.location.origin}/success`
     window.location.href = `/api/checkout?successUrl=${encodeURIComponent(successUrl)}`
   }
@@ -199,6 +240,7 @@ export default function HomePage() {
         <footer style={s.siteFooter}>
           <span style={s.footerTrigs}>☰ ☱ ☲ ☳ ☴ ☵ ☶ ☷</span>
           <p style={s.footerCopy}>The Book of Changes has been consulted for three thousand years.</p>
+          <p style={s.footerMethod}>Method: Plum Blossom Numerology · Shao Yong, Song Dynasty</p>
           <div style={s.footerLinks}>
             <a href="mailto:xuxiaofeng0@gmail.com" style={s.footerLink}>xuxiaofeng0@gmail.com</a>
             <span style={{ color: '#d4c9b0' }}>·</span>
@@ -234,7 +276,7 @@ const s: Record<string, React.CSSProperties> = {
   masthead: { textAlign: 'center', marginBottom: 64 },
   seal: { display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 52, height: 52, border: '2px solid #c0392b', borderRadius: 4, transform: 'rotate(-6deg)', marginBottom: 24, position: 'relative' },
   sealChar: { fontFamily: 'serif', fontSize: 22, color: '#c0392b', lineHeight: 1 },
- title: { fontFamily: 'Georgia, serif', fontSize: 'clamp(28px, 5vw, 46px)', fontWeight: 300, letterSpacing: '0.06em', color: '#1a1410', lineHeight: 1.1, whiteSpace: 'nowrap' },
+  title: { fontFamily: 'Georgia, serif', fontSize: 'clamp(28px, 5vw, 46px)', fontWeight: 300, letterSpacing: '0.06em', color: '#1a1410', lineHeight: 1.1, whiteSpace: 'nowrap' },
   rule: { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 14, margin: '20px auto', maxWidth: 260 },
   ruleLine: { flex: 1, height: 1, background: '#d4c9b0' },
   ruleTrigs: { fontSize: 18, color: '#8a7f6e', letterSpacing: 6 },
