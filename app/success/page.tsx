@@ -16,10 +16,10 @@ const SHICHEN = [
 function SuccessContent() {
   const params = useSearchParams()
   const [reading, setReading] = useState('')
-  const [displayed, setDisplayed] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [birthInfo, setBirthInfo] = useState('')
+  const [done, setDone] = useState(false)
 
   useEffect(() => {
     const checkoutId = params.get('checkout_id') || ''
@@ -61,34 +61,81 @@ function SuccessContent() {
     fetchReading()
   }, [params])
 
+  // Typing animation via DOM manipulation to avoid cursor bug
   useEffect(() => {
     if (!reading) return
-    let i = 0
-    setDisplayed('')
-    const interval = setInterval(() => {
-      if (i < reading.length) {
-        setDisplayed(reading.slice(0, ++i))
+
+    const el = document.getElementById('readingContent')
+    if (!el) return
+    el.innerHTML = ''
+    setDone(false)
+
+    // Parse lines and build DOM structure first
+    const lines = reading.split('\n')
+    lines.forEach(line => {
+      if (line.startsWith('## ')) {
+        const h = document.createElement('h2')
+        h.textContent = line.replace('## ', '')
+        h.style.cssText = 'font-family:Georgia,serif;font-size:18px;font-weight:400;color:#c08e46;letter-spacing:0.08em;margin:28px 0 12px'
+        el.appendChild(h)
+      } else if (line === '---') {
+        const hr = document.createElement('hr')
+        hr.style.cssText = 'border:none;border-top:1px solid rgba(212,201,176,0.1);margin:20px 0'
+        el.appendChild(hr)
+      } else if (line.trim() === '') {
+        const sp = document.createElement('div')
+        sp.style.height = '10px'
+        el.appendChild(sp)
       } else {
+        const p = document.createElement('p')
+        p.textContent = line
+        p.style.cssText = 'font-size:16px;font-weight:300;line-height:1.9;color:rgba(232,224,204,0.82);margin-bottom:4px'
+        el.appendChild(p)
+      }
+    })
+
+    // Collect all text nodes to type into
+    const typeable: { node: Element, original: string }[] = []
+    el.querySelectorAll('h2, p').forEach(node => {
+      const original = node.textContent || ''
+      node.textContent = ''
+      typeable.push({ node, original })
+    })
+
+    if (typeable.length === 0) { setDone(true); return }
+
+    // Single cursor that moves between nodes
+    const cursor = document.createElement('span')
+    cursor.style.cssText = 'display:inline-block;width:1.5px;height:0.9em;background:#c08e46;margin-left:1px;vertical-align:text-bottom;animation:blink 0.7s step-end infinite'
+    typeable[0].node.appendChild(cursor)
+
+    let nodeIdx = 0
+    let charIdx = 0
+
+    const interval = setInterval(() => {
+      if (nodeIdx >= typeable.length) {
         clearInterval(interval)
+        cursor.remove()
+        setDone(true)
+        return
+      }
+
+      const { node, original } = typeable[nodeIdx]
+
+      if (charIdx < original.length) {
+        node.insertBefore(document.createTextNode(original[charIdx]), cursor)
+        charIdx++
+      } else {
+        nodeIdx++
+        charIdx = 0
+        if (nodeIdx < typeable.length) {
+          typeable[nodeIdx].node.appendChild(cursor)
+        }
       }
     }, 12)
+
     return () => clearInterval(interval)
   }, [reading])
-
-  function renderReading(text: string) {
-    return text.split('\n').map((line, i) => {
-      if (line.startsWith('## ')) {
-        return <h2 key={i} style={rs.sectionTitle}>{line.replace('## ', '')}</h2>
-      }
-      if (line.startsWith('---')) {
-        return <div key={i} style={rs.divider} />
-      }
-      if (line.trim() === '') {
-        return <div key={i} style={{ height: 10 }} />
-      }
-      return <p key={i} style={rs.para}>{line}</p>
-    })
-  }
 
   return (
     <div style={s.body}>
@@ -124,14 +171,9 @@ function SuccessContent() {
 
           {error && <p style={s.errorText}>{error}</p>}
 
-          {displayed && (
-            <div>
-              {renderReading(displayed)}
-              {displayed.length < reading.length && <span style={s.cursor} />}
-            </div>
-          )}
+          <div id="readingContent" />
 
-          {displayed && displayed.length === reading.length && (
+          {done && (
             <div style={s.readingFooter}>
               <span style={s.footerGlyph}>命</span>
               <p style={s.footerNote}>
@@ -141,7 +183,7 @@ function SuccessContent() {
           )}
         </div>
 
-        {displayed && displayed.length === reading.length && (
+        {done && (
           <div style={s.newReading}>
             <a href="/" style={s.newReadingBtn}>← Get Another Reading</a>
           </div>
@@ -172,12 +214,6 @@ function SuccessContent() {
   )
 }
 
-const rs: Record<string, React.CSSProperties> = {
-  sectionTitle: { fontFamily: 'Georgia, serif', fontSize: 18, fontWeight: 400, color: '#c08e46', letterSpacing: '0.08em', marginTop: 28, marginBottom: 12 },
-  divider: { height: 1, background: 'rgba(212,201,176,0.1)', margin: '20px 0' },
-  para: { fontSize: 16, fontWeight: 300, lineHeight: 1.9, color: 'rgba(232,224,204,0.82)', marginBottom: 4 },
-}
-
 const s: Record<string, React.CSSProperties> = {
   body: { background: '#0d0f14', minHeight: '100vh', color: '#e8e0cc', fontFamily: "'Cormorant Garamond', Georgia, serif", position: 'relative' },
   starsLayer: {
@@ -206,7 +242,6 @@ const s: Record<string, React.CSSProperties> = {
   loadingGlyph: { fontFamily: 'serif', fontSize: 30, color: 'rgba(192,142,70,0.5)', animation: 'glyph-pulse 1.8s ease-in-out infinite' },
   loadingText: { fontSize: 12, color: 'rgba(232,224,204,0.25)', letterSpacing: '0.35em', textTransform: 'uppercase', fontStyle: 'italic' },
   errorText: { color: 'rgba(192,57,43,0.8)', fontSize: 15, fontStyle: 'italic', padding: '20px 0' },
-  cursor: { display: 'inline-block', width: '1.5px', height: '0.9em', background: '#c08e46', marginLeft: 1, verticalAlign: 'text-bottom', animation: 'blink 0.7s step-end infinite' },
   readingFooter: { marginTop: 32, paddingTop: 24, borderTop: '1px solid rgba(212,201,176,0.1)', display: 'flex', alignItems: 'flex-start', gap: 14 },
   footerGlyph: { fontFamily: 'serif', fontSize: 20, color: 'rgba(192,142,70,0.3)', border: '1px solid rgba(192,142,70,0.15)', padding: '4px 8px', lineHeight: 1, flexShrink: 0 },
   footerNote: { fontSize: 12, fontStyle: 'italic', color: 'rgba(232,224,204,0.25)', lineHeight: 1.7 },
