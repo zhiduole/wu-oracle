@@ -58,12 +58,11 @@ export default function HomePage() {
         <header style={s.hero}>
           <div style={s.eyebrow}>Chinese Astrology · 八字命理</div>
           <h1 style={s.heroTitle}>
-            Know Your<br />
-            <em style={s.heroEm}>Four Pillars</em>
+            Your Chinese Astrology<br />
+          <em style={s.heroEm}>Birth Chart</em>
           </h1>
           <p style={s.heroSub}>
-            Your birth date encodes four pillars — year, month, day, and hour —
-            each a window into your character, destiny, and the currents of time moving through your life.
+            Based on the Four Pillars system — the ancient Chinese method that uses your exact birth date and hour to reveal your character, life patterns, and what the next three years hold.
           </p>
           <div style={s.divider}>
             <div style={s.dividerLine} />
@@ -198,7 +197,7 @@ export default function HomePage() {
           <div style={s.footerGlyphs}>年 月 日 时</div>
           <p style={s.footerCopy}>The Four Pillars have charted human destiny for over a thousand years.</p>
           <div style={s.footerLinks}>
-            <a href="mailto:xuxiaofeng0@gmail.com" style={s.footerLink}>xuxiaofeng0@gmail.com</a>
+            <a href="mailto:iamxiaofeng.xu@gmail.com" style={s.footerLink}>iamxiaofeng.xu@gmail.com</a>
             <span style={s.footerDot}>·</span>
             <a href="/privacy" style={s.footerLink}>Privacy Policy</a>
             <span style={s.footerDot}>·</span>
@@ -237,8 +236,7 @@ const s: Record<string, React.CSSProperties> = {
   page: { position: 'relative', zIndex: 1, maxWidth: 720, margin: '0 auto', padding: '64px 24px 100px' },
   hero: { textAlign: 'center', marginBottom: 52 },
   eyebrow: { display: 'inline-block', border: '1px solid rgba(192,142,70,0.35)', color: 'rgba(192,142,70,0.75)', fontSize: 10, letterSpacing: '0.4em', padding: '5px 18px', marginBottom: 24, textTransform: 'uppercase' },
-  heroTitle: { fontFamily: 'Georgia, serif', fontSize: 'clamp(42px, 9vw, 80px)', fontWeight: 300, lineHeight: 1.05, color: '#e8e0cc', letterSpacing: '0.02em', marginBottom: 20 },
-  heroEm: { color: '#c08e46', fontStyle: 'italic' },
+  heroTitle: { fontFamily: 'Georgia, serif', fontSize: 'clamp(32px, 7vw, 62px)', fontWeight: 300, lineHeight: 1.05, color: '#e8e0cc', letterSpacing: '0.02em', marginBottom: 20 },  heroEm: { color: '#c08e46', fontStyle: 'italic' },
   heroSub: { fontSize: 16, fontWeight: 300, lineHeight: 1.85, color: 'rgba(232,224,204,0.55)', maxWidth: 520, margin: '0 auto 28px' },
   divider: { display: 'flex', alignItems: 'center', gap: 18, maxWidth: 180, margin: '0 auto' },
   dividerLine: { flex: 1, height: 1, background: 'rgba(192,142,70,0.18)' },
