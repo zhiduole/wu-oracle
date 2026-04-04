@@ -136,13 +136,13 @@ export async function POST(req: NextRequest) {
     const { checkoutId, orderId, signature, year, month, day, hour, gender } = body
 
     // Temporarily disabled for testing — re-enable before go-live
-    // const isValid = verifyCreemSignature(
-    //   { checkout_id: checkoutId, order_id: orderId, signature },
-    //   process.env.CREEM_API_KEY!
-    // )
-    // if (!isValid) {
-    //   return NextResponse.json({ error: 'Invalid payment signature' }, { status: 403 })
-    // }
+    const isValid = verifyCreemSignature(
+      { checkout_id: checkoutId, order_id: orderId, signature },
+     process.env.CREEM_API_KEY!
+    )
+   if (!isValid) {
+     return NextResponse.json({ error: 'Invalid payment signature' }, { status: 403 })
+   }
 
     const yearNum  = parseInt(year)
     const monthNum = parseInt(month)
