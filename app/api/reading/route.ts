@@ -12,7 +12,7 @@ function verifyCreemSignature(params: Record<string, string>, apiKey: string): b
   return expected === signature
 }
 
-const SHICHEN = [
+const SHICHEN_LABELS = [
   'Rat Hour (子时, 23:00–01:00)',
   'Ox Hour (丑时, 01:00–03:00)',
   'Tiger Hour (寅时, 03:00–05:00)',
@@ -26,6 +26,46 @@ const SHICHEN = [
   'Dog Hour (戌时, 19:00–21:00)',
   'Pig Hour (亥时, 21:00–23:00)',
 ]
+
+// Map shichen index to representative hour for the library
+const SHICHEN_HOUR = [0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22]
+
+function calculateBazi(year: number, month: number, day: number, hourIndex: number) {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { BaziCalculator } = require('bazi-calculator-by-alvamind')
+    const hour = SHICHEN_HOUR[hourIndex]
+    const calc = new BaziCalculator(year, month, day, hour, 'male')
+    const pillars = calc.calculatePillars()
+    const analysis = calc.calculateBasicAnalysis()
+
+    const ELEMENT_MAP: Record<string, string> = {
+      WOOD: 'Wood', FIRE: 'Fire', EARTH: 'Earth', METAL: 'Metal', WATER: 'Water',
+    }
+
+    const yearPillar = `${pillars.year.chinese} (${ELEMENT_MAP[pillars.year.element] || pillars.year.element} ${pillars.year.animal})`
+    const monthPillar = `${pillars.month.chinese} (${ELEMENT_MAP[pillars.month.element] || pillars.month.element} ${pillars.month.animal})`
+    const dayPillar = `${pillars.day.chinese} (${ELEMENT_MAP[pillars.day.element] || pillars.day.element} ${pillars.day.animal})`
+    const hourPillar = `${pillars.time.chinese} (${ELEMENT_MAP[pillars.time.element] || pillars.time.element} ${pillars.time.animal})`
+
+    const dayMaster = `${analysis.dayMaster.stem} — ${analysis.dayMaster.nature} ${ELEMENT_MAP[analysis.dayMaster.element] || analysis.dayMaster.element}`
+
+    const ff = analysis.fiveFactors
+    const total = Object.values(ff).reduce((a: number, b) => a + (b as number), 0)
+    const elementBalance = Object.entries(ff)
+      .map(([el, val]) => `${ELEMENT_MAP[el] || el}: ${Math.round((val as number / total) * 100)}%`)
+      .join(', ')
+
+    return {
+      yearPillar, monthPillar, dayPillar, hourPillar,
+      dayMaster, elementBalance,
+      fullChinese: calc.toString(),
+    }
+  } catch (err) {
+    console.error('Bazi calculation error:', err)
+    return null
+  }
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -41,8 +81,29 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid payment signature' }, { status: 403 })
     }
 
-    const hourLabel = SHICHEN[parseInt(hour)] || hour
+    const yearNum = parseInt(year)
+    const monthNum = parseInt(month)
+    const dayNum = parseInt(day)
+    const hourIndex = parseInt(hour)
+    const hourLabel = SHICHEN_LABELS[hourIndex] || hour
     const currentYear = new Date().getFullYear()
+
+    // Calculate Four Pillars using the library
+    const bazi = calculateBazi(yearNum, monthNum, dayNum, hourIndex)
+
+    let baziContext = ''
+    if (bazi) {
+      baziContext = `
+CALCULATED FOUR PILLARS (use these exactly, do not recalculate):
+- Full chart: ${bazi.fullChinese}
+- Year Pillar: ${bazi.yearPillar}
+- Month Pillar: ${bazi.monthPillar}
+- Day Pillar: ${bazi.dayPillar}
+- Hour Pillar: ${bazi.hourPillar}
+- Day Master: ${bazi.dayMaster}
+- Five Element Balance: ${bazi.elementBalance}
+`
+    }
 
     const systemPrompt = `You are a master Chinese Four Pillars astrologer (八字命理师) with deep expertise in traditional Chinese destiny analysis. You have thoroughly studied and internalized the following classical texts:
 
@@ -56,39 +117,30 @@ export async function POST(req: NextRequest) {
 - 《神峰通考》(Shen Feng Tong Kao) — advanced analysis of the Ten Gods and their interactions
 - 《果老星宗》(Guo Lao Xing Zong) — the integration of stellar influences with Four Pillars
 
-Your expertise includes:
-- Precise Day Master (日主) identification and strength assessment
-- Five Element (五行) balance and imbalance analysis
-- Ten Gods (十神) relationship dynamics: Officer, Wealth, Resource, Output, and Companion stars
-- Favorable and unfavorable elements (用神/忌神) identification
-- Luck Pillar (大运) progression and timing
-- Annual stem-branch interactions and clash/combination analysis
-- Special formations and extraordinary chart patterns
-- Practical life guidance derived from chart analysis
-
 YOUR MISSION: Translate classical Four Pillars wisdom for Western audiences with zero background in Chinese astrology.
 
 Rules:
+- The Four Pillars have already been calculated for you. Use them exactly as provided. DO NOT recalculate.
 - NEVER use raw Chinese terminology without immediately explaining it in plain English
 - Use analogies Western readers understand — personality types, modern psychology, life seasons
 - Be specific and concrete — no vague fortune-cookie statements
-- Be honest about both strengths AND challenges — do not only flatter
-- Use plain conversational English — like a knowledgeable trusted friend, not a mystical fortune teller
-- Every statement must trace back to the actual chart structure
+- Be honest about both strengths AND challenges
+- Use plain conversational English — like a knowledgeable trusted friend
 - Frame challenges as growth edges, not curses
-- Use public calendar years (2024, 2025, 2026) not Chinese era names
+- Use public calendar years (${currentYear}, ${currentYear + 1}, ${currentYear + 2}) not Chinese era names
+- Gender context: ${gender}
 
 OUTPUT FORMAT — use exactly these section headers with ## prefix:
 
 ## Your Four Pillars
 
-[Show the four pillars clearly: Year Pillar, Month Pillar, Day Pillar, Hour Pillar with their Heavenly Stems and Earthly Branches. Add a one-sentence plain English explanation of what each pillar represents.]
+[Present the four pillars clearly using the calculated values above. Format as a simple table or list. Add one sentence explaining what each pillar represents in plain English.]
 
 ---
 
 ## Who You Are: Character & Core Strengths
 
-[3 paragraphs. Based on Day Master and chart structure, describe their fundamental personality, natural strengths, how they process emotion, how they approach work and relationships. Be specific — this should feel like an accurate personality profile, not a horoscope.]
+[3 paragraphs. Based on the Day Master and element balance, describe their fundamental personality, natural strengths, emotional style, and approach to work and relationships. Be specific — this should feel like an accurate personality profile, not a horoscope.]
 
 ---
 
@@ -100,13 +152,13 @@ OUTPUT FORMAT — use exactly these section headers with ## prefix:
 
 ## ${currentYear}: What This Year Holds
 
-[2 paragraphs. How does the ${currentYear} annual pillar interact with this person's natal chart? What themes are activated? What specific opportunities and cautions apply to ${currentYear}?]
+[2 paragraphs. Analyze how the ${currentYear} annual Heavenly Stem and Earthly Branch interact with this person's natal chart. What themes are activated? What specific opportunities and cautions apply?]
 
 ---
 
 ## Three-Year Outlook: ${currentYear}–${currentYear + 2}
 
-[One paragraph per year. For each of ${currentYear}, ${currentYear + 1}, and ${currentYear + 2}: what is the dominant energy for this person, what life area is most activated, and one specific piece of advice for navigating it well.]
+[One paragraph per year for ${currentYear}, ${currentYear + 1}, and ${currentYear + 2}. For each year: what is the dominant energy for this person, what life area is most activated, and one specific piece of advice.]
 
 ---
 
@@ -115,13 +167,13 @@ OUTPUT FORMAT — use exactly these section headers with ## prefix:
 [1 substantial paragraph synthesizing who this person is at their core and what the next phase of their life is fundamentally about. End with one concrete, actionable piece of wisdom drawn directly from the chart.]`
 
     const userMessage = `Please provide a complete Four Pillars reading for:
-- Birth year: ${year}
-- Birth month: ${month}
-- Birth day: ${day}
+- Birth date: ${year}-${month}-${day}
 - Birth hour: ${hourLabel}
 - Gender: ${gender}
 
-Calculate the Four Pillars, identify the Day Master and its strength, analyze the Five Element balance, identify the favorable and unfavorable elements, and provide the complete reading following the specified format.`
+${baziContext}
+
+Use the pre-calculated Four Pillars above as the foundation for your entire reading. Provide the complete reading following the specified format.`
 
     const response = await fetch('https://api.deepseek.com/chat/completions', {
       method: 'POST',
