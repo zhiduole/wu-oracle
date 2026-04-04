@@ -51,7 +51,7 @@ function calculateBazi(year: number, month: number, day: number, hourIndex: numb
     const dayMaster = `${analysis.dayMaster.stem} — ${analysis.dayMaster.nature} ${ELEMENT_MAP[analysis.dayMaster.element] || analysis.dayMaster.element}`
 
     const ff = analysis.fiveFactors
-    const total = Object.values(ff).reduce((a: number, b) => a + (b as number), 0)
+    const total = Object.values(ff).reduce<number>((a, b) => a + (b as number), 0)
     const elementBalance = Object.entries(ff)
       .map(([el, val]) => {
         const numVal = val as number;  // 先断言
