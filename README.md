@@ -5,7 +5,7 @@
 
 ## What You Need Before Starting
 
-1. A [Lemon Squeezy](https://lemonsqueezy.com) account (free to sign up)
+1. A [Lemon Squeezy](https://lemonsqueezy.com) accoun t (free to sign up)
 2. A [DeepSeek](https://platform.deepseek.com) account with API key (min $2 credit)
 3. A [Vercel](https://vercel.com) account (free)
 4. A [GitHub](https://github.com) account (free)
