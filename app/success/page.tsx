@@ -183,15 +183,26 @@ function SuccessContent() {
           )}
         </div>
 
-        {done && (
+       {done && (
           <div style={s.newReading}>
             <a href="/" style={s.newReadingBtn}>← Get Another Reading</a>
           </div>
         )}
 
+        {done && (
+          <div style={s.contactBox}>
+            <p style={s.contactText}>
+              Want a deeper consultation? Reach out directly —
+            </p>
+            <a href="mailto:iamxiaofeng.xu@gmail.com" style={s.contactEmail}>
+              iamxiaofeng.xu@gmail.com
+            </a>
+          </div>
+        )}
+
         <footer style={s.footer}>
           <div style={s.footerLinks}>
-            <a href="mailto:xuxiaofeng0@gmail.com" style={s.footerLink}>xuxiaofeng0@gmail.com</a>
+            <a href="mailto:iamxiaofeng.xu@gmail.com" style={s.footerLink}>iamxiaofeng.xu@gmail.com</a>
             <span style={s.footerDot}>·</span>
             <a href="/privacy" style={s.footerLink}>Privacy Policy</a>
             <span style={s.footerDot}>·</span>
@@ -212,6 +223,12 @@ function SuccessContent() {
       `}</style>
     </div>
   )
+}
+
+const rs: Record<string, React.CSSProperties> = {
+  sectionTitle: { fontFamily: 'Georgia, serif', fontSize: 18, fontWeight: 400, color: '#c08e46', letterSpacing: '0.08em', marginTop: 28, marginBottom: 12 },
+  divider: { height: 1, background: 'rgba(212,201,176,0.1)', margin: '20px 0' },
+  para: { fontSize: 16, fontWeight: 300, lineHeight: 1.9, color: 'rgba(232,224,204,0.82)', marginBottom: 4 },
 }
 
 const s: Record<string, React.CSSProperties> = {
@@ -242,11 +259,15 @@ const s: Record<string, React.CSSProperties> = {
   loadingGlyph: { fontFamily: 'serif', fontSize: 30, color: 'rgba(192,142,70,0.5)', animation: 'glyph-pulse 1.8s ease-in-out infinite' },
   loadingText: { fontSize: 12, color: 'rgba(232,224,204,0.25)', letterSpacing: '0.35em', textTransform: 'uppercase', fontStyle: 'italic' },
   errorText: { color: 'rgba(192,57,43,0.8)', fontSize: 15, fontStyle: 'italic', padding: '20px 0' },
+  cursor: { display: 'inline-block', width: '1.5px', height: '0.9em', background: '#c08e46', marginLeft: 1, verticalAlign: 'text-bottom', animation: 'blink 0.7s step-end infinite' },
   readingFooter: { marginTop: 32, paddingTop: 24, borderTop: '1px solid rgba(212,201,176,0.1)', display: 'flex', alignItems: 'flex-start', gap: 14 },
   footerGlyph: { fontFamily: 'serif', fontSize: 20, color: 'rgba(192,142,70,0.3)', border: '1px solid rgba(192,142,70,0.15)', padding: '4px 8px', lineHeight: 1, flexShrink: 0 },
   footerNote: { fontSize: 12, fontStyle: 'italic', color: 'rgba(232,224,204,0.25)', lineHeight: 1.7 },
-  newReading: { textAlign: 'center', marginBottom: 48 },
+  newReading: { textAlign: 'center', marginBottom: 20 },
   newReadingBtn: { display: 'inline-block', border: '1px solid rgba(192,142,70,0.25)', color: 'rgba(192,142,70,0.6)', fontFamily: 'Georgia, serif', fontSize: 12, letterSpacing: '0.25em', padding: '11px 24px', textDecoration: 'none' },
+  contactBox: { textAlign: 'center', marginBottom: 40, padding: '28px 24px', border: '1px solid rgba(192,142,70,0.2)' },
+  contactText: { fontSize: 14, color: 'rgba(232,224,204,0.45)', fontStyle: 'italic', marginBottom: 12, letterSpacing: '0.05em' },
+  contactEmail: { fontSize: 17, color: '#c08e46', textDecoration: 'none', letterSpacing: '0.15em', fontFamily: 'Georgia, serif', borderBottom: '1px solid rgba(192,142,70,0.45)', paddingBottom: 3 },
   footer: { textAlign: 'center' },
   footerLinks: { display: 'flex', justifyContent: 'center', gap: 12, flexWrap: 'wrap' as const },
   footerLink: { fontSize: 11, color: 'rgba(232,224,204,0.2)', textDecoration: 'none', letterSpacing: '0.1em' },
