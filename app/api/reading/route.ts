@@ -53,7 +53,10 @@ function calculateBazi(year: number, month: number, day: number, hourIndex: numb
     const ff = analysis.fiveFactors
     const total = Object.values(ff).reduce((a: number, b) => a + (b as number), 0)
     const elementBalance = Object.entries(ff)
-      .map(([el, val]) => `${ELEMENT_MAP[el] || el}: ${Math.round((val as number / total) * 100)}%`)
+      .map(([el, val]) => {
+        const numVal = val as number;  // 先断言
+        return `${ELEMENT_MAP[el] || el}: ${Math.round((numVal / total) * 100)}%`;
+      })
       .join(', ')
 
     return {
