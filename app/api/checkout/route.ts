@@ -5,7 +5,7 @@ export async function GET(req: NextRequest) {
   const successUrl = searchParams.get('successUrl') || `${process.env.NEXT_PUBLIC_SITE_URL}/success`
 
   try {
-    const res = await fetch('https://api.creem.io/v1/checkouts', {
+    const res = await fetch('https://test-api.creem.io/v1/checkouts', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
