@@ -75,14 +75,14 @@ export async function POST(req: NextRequest) {
     const body = await req.json()
     const { checkoutId, orderId, signature, year, month, day, hour, gender } = body
 
-    const isValid = verifyCreemSignature(
-      { checkout_id: checkoutId, order_id: orderId, signature },
-      process.env.CREEM_API_KEY!
-    )
+//   const isValid = verifyCreemSignature(
+//      { checkout_id: checkoutId, order_id: orderId, signature },
+//      process.env.CREEM_API_KEY!
+//    )
 
-    if (!isValid) {
-      return NextResponse.json({ error: 'Invalid payment signature' }, { status: 403 })
-    }
+//    if (!isValid) {
+//      return NextResponse.json({ error: 'Invalid payment signature' }, { status: 403 })
+//    }
 
     const yearNum = parseInt(year)
     const monthNum = parseInt(month)
