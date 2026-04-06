@@ -16,6 +16,7 @@ function verifyCreemSignature(params: Record<string, string>, apiKey: string): b
 const STEMS   = ['甲','乙','丙','丁','戊','己','庚','辛','壬','癸']
 const BRANCHES = ['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥']
 const ANIMALS  = ['Rat','Ox','Tiger','Rabbit','Dragon','Snake','Horse','Goat','Monkey','Rooster','Dog','Pig']
+const ANIMALS_ZH = ['鼠','牛','虎','兔','龙','蛇','马','羊','猴','鸡','狗','猪']
 const ELEMENTS_MAP: Record<string,string> = {
   '甲':'WOOD','乙':'WOOD','丙':'FIRE','丁':'FIRE','戊':'EARTH',
   '己':'EARTH','庚':'METAL','辛':'METAL','壬':'WATER','癸':'WATER',
@@ -27,9 +28,16 @@ const BRANCH_ELEMENTS: Record<string,string> = {
 const EL_EN: Record<string,string> = {
   WOOD:'Wood', FIRE:'Fire', EARTH:'Earth', METAL:'Metal', WATER:'Water'
 }
+const EL_ZH: Record<string,string> = {
+  WOOD:'木', FIRE:'火', EARTH:'土', METAL:'金', WATER:'水'
+}
 const NATURE_MAP: Record<string,string> = {
   '甲':'Yang','乙':'Yin','丙':'Yang','丁':'Yin','戊':'Yang',
   '己':'Yin','庚':'Yang','辛':'Yin','壬':'Yang','癸':'Yin',
+}
+const NATURE_MAP_ZH: Record<string,string> = {
+  '甲':'阳','乙':'阴','丙':'阳','丁':'阴','戊':'阳',
+  '己':'阴','庚':'阳','辛':'阴','壬':'阳','癸':'阴',
 }
 
 const SHICHEN_LABELS = [
@@ -45,6 +53,21 @@ const SHICHEN_LABELS = [
   'Rooster Hour (酉时, 17:00–19:00)',
   'Dog Hour (戌时, 19:00–21:00)',
   'Pig Hour (亥时, 21:00–23:00)',
+]
+
+const SHICHEN_LABELS_ZH = [
+  '子时 (23:00–01:00)',
+  '丑时 (01:00–03:00)',
+  '寅时 (03:00–05:00)',
+  '卯时 (05:00–07:00)',
+  '辰时 (07:00–09:00)',
+  '巳时 (09:00–11:00)',
+  '午时 (11:00–13:00)',
+  '未时 (13:00–15:00)',
+  '申时 (15:00–17:00)',
+  '酉时 (17:00–19:00)',
+  '戌时 (19:00–21:00)',
+  '亥时 (21:00–23:00)',
 ]
 
 // Shichen index → representative hour for lookup
@@ -65,7 +88,7 @@ function getHourBranch(hour: number): string {
   return '子'
 }
 
-function calculateBazi(year: number, month: number, day: number, hourIndex: number) {
+function calculateBazi(year: number, month: number, day: number, hourIndex: number, lang: string = 'en') {
   try {
     const mapping = (datesMapping as Record<string, Record<string, Record<string, Record<string, string>>>>)
       ?.[year]?.[month]?.[day]
@@ -106,12 +129,24 @@ function calculateBazi(year: number, month: number, day: number, hourIndex: numb
     })
     const total = Object.values(ff).reduce((a, b) => a + b, 0)
 
+    const isChinese = lang === 'zh'
+    
     const formatPillar = (p: string) => {
       const stem = p[0], branch = p[1]
-      const el = EL_EN[ELEMENTS_MAP[stem]] || ''
-      const animal = ANIMALS[BRANCHES.indexOf(branch)] || ''
-      return `${p} (${el} ${animal})`
+      if (isChinese) {
+        const el = EL_ZH[ELEMENTS_MAP[stem]] || ''
+        const animal = ANIMALS_ZH[BRANCHES.indexOf(branch)] || ''
+        return `${p} (${el}${animal})`
+      } else {
+        const el = EL_EN[ELEMENTS_MAP[stem]] || ''
+        const animal = ANIMALS[BRANCHES.indexOf(branch)] || ''
+        return `${p} (${el} ${animal})`
+      }
     }
+
+    const elementBalanceStr = isChinese
+      ? Object.entries(ff).map(([el, v]) => `${EL_ZH[el]}: ${Math.round(v / total * 100)}%`).join('，')
+      : Object.entries(ff).map(([el, v]) => `${EL_EN[el]}: ${Math.round(v / total * 100)}%`).join(', ')
 
     return {
       yearPillar:  formatPillar(yearPillar),
@@ -119,10 +154,10 @@ function calculateBazi(year: number, month: number, day: number, hourIndex: numb
       dayPillar:   formatPillar(dayPillar),
       hourPillar:  formatPillar(hourPillar),
       fullChinese: `${yearPillar}年${monthPillar}月${dayPillar}日${hourPillar}時`,
-      dayMaster: `${dayStem} — ${dmNature} ${EL_EN[dmElement]}`,
-      elementBalance: Object.entries(ff)
-        .map(([el, v]) => `${EL_EN[el]}: ${Math.round(v / total * 100)}%`)
-        .join(', '),
+      dayMaster: isChinese 
+        ? `${dayStem} — ${NATURE_MAP_ZH[dayStem]}${EL_ZH[dmElement]}`
+        : `${dayStem} — ${dmNature} ${EL_EN[dmElement]}`,
+      elementBalance: elementBalanceStr,
     }
   } catch (err) {
     console.error('Bazi calculation error:', err)
@@ -133,7 +168,7 @@ function calculateBazi(year: number, month: number, day: number, hourIndex: numb
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
-    const { checkoutId, orderId, signature, year, month, day, hour, gender } = body
+    const { checkoutId, orderId, signature, year, month, day, hour, gender, bazi_lang } = body
 
     // Temporarily disabled for testing — re-enable before go-live
     const isValid = verifyCreemSignature(
@@ -148,14 +183,29 @@ export async function POST(req: NextRequest) {
     const monthNum = parseInt(month)
     const dayNum   = parseInt(day)
     const hourIndex = parseInt(hour)
-    const hourLabel = SHICHEN_LABELS[hourIndex] || hour
+    const lang = bazi_lang === 'zh' ? 'zh' : 'en'
+    const hourLabel = lang === 'zh' 
+      ? SHICHEN_LABELS_ZH[hourIndex] || hour
+      : SHICHEN_LABELS[hourIndex] || hour
     const currentYear = new Date().getFullYear()
 
-    const bazi = calculateBazi(yearNum, monthNum, dayNum, hourIndex)
+    const bazi = calculateBazi(yearNum, monthNum, dayNum, hourIndex, lang)
 
     let baziContext = ''
     if (bazi) {
-      baziContext = `
+      if (lang === 'zh') {
+        baziContext = `
+已计算的四柱八字 — 请精确使用以下数据，不要重新计算：
+- 完整八字：${bazi.fullChinese}
+- 年柱：${bazi.yearPillar}
+- 月柱：${bazi.monthPillar}
+- 日柱：${bazi.dayPillar}
+- 时柱：${bazi.hourPillar}
+- 日主：${bazi.dayMaster}
+- 五行平衡：${bazi.elementBalance}
+`
+      } else {
+        baziContext = `
 CALCULATED FOUR PILLARS — use these exactly, do not recalculate:
 - Full chart: ${bazi.fullChinese}
 - Year Pillar:  ${bazi.yearPillar}
@@ -165,9 +215,71 @@ CALCULATED FOUR PILLARS — use these exactly, do not recalculate:
 - Day Master:   ${bazi.dayMaster}
 - Five Element Balance: ${bazi.elementBalance}
 `
+      }
     }
 
-    const systemPrompt = `You are a master Chinese Four Pillars astrologer (八字命理师) with deep expertise in traditional Chinese destiny analysis. You have thoroughly studied and internalized the following classical texts:
+    // 根据语言选择 system prompt
+    const systemPrompt = lang === 'zh' ? `你是一位精通中国传统八字命理学的命理大师。你已经深入研习并内化了以下经典著作：
+
+- 《穷通宝鉴》 — 五行调候用神的权威指南
+- 《三命通会》 — 命理学百科全书
+- 《滴天髓》 — 日主论命的最精深经典
+- 《渊海子平》 — 四柱命理学的奠基之作
+- 《千里命稿》 — 民国命理大师韦千里的系统方法论
+- 《协纪辨方书》 — 择吉与神煞的权威典籍
+- 《子平真诠》 — 子平命学的正统方法论
+- 《神峰通考》 — 十神与格局的进阶分析
+- 《果老星宗》 — 七政四余与八字的融合
+
+你的任务：用专业、详细、温暖且富有洞察力的中文为用户解读八字命盘。
+
+规则：
+- 四柱八字已经预先计算好了，请精确使用提供的数据，不要重新计算或修改任何一柱
+- 使用专业术语时请立即用通俗语言解释
+- 具体而实在 — 不要泛泛而谈或说模棱两可的话
+- 诚实指出优势与挑战
+- 语言温暖专业，像一位值得信赖的良师益友
+- 把挑战表述为成长的方向，而不是诅咒
+- 使用公历年份（${currentYear}年、${currentYear + 1}年、${currentYear + 2}年）
+- 性别：${gender}
+
+输出格式 — 请精确使用以下章节标题（用 ## 开头）：
+
+## 您的四柱八字
+
+[使用预先计算的四柱值。以清晰的列表格式呈现。用一句话解释每一柱代表什么。]
+
+---
+
+## 命主本色：性格与核心优势
+
+[3段落。基于日主和五行平衡，描述基本性格、天赋优势、情感风格、工作和关系中的表现。要具体 — 这应该感觉像一份精准的性格画像。]
+
+---
+
+## 人生格局与反复出现的主题
+
+[2段落。此人生活中反复出现的模式，典型的挑战，基于五行平衡的金钱观、事业观和感情观。]
+
+---
+
+## ${currentYear}年流年运势
+
+[2段落。${currentYear}年的流年大运与命盘如何互动？激活了哪些主题？有哪些具体的机会和注意事项？]
+
+---
+
+## 三年展望：${currentYear}–${currentYear + 2}年
+
+[每一年一个段落：${currentYear}年、${currentYear + 1}年、${currentYear + 2}年。每段包含：主导能量、最活跃的人生领域、一个具体建议。]
+
+---
+
+## 命理结语
+
+[1个完整的段落，总结此人的核心特质以及下一阶段的主题。最后给出一个具体可行的命理智慧建议。]`
+
+      : `You are a master Chinese Four Pillars astrologer (八字命理师) with deep expertise in traditional Chinese destiny analysis. You have thoroughly studied and internalized the following classical texts:
 
 - 《穷通宝鉴》(Qiong Tong Bao Jian) — the definitive guide to balancing the Five Elements across seasons
 - 《三命通会》(San Ming Tong Hui) — the comprehensive encyclopedia of destiny analysis
@@ -227,7 +339,16 @@ OUTPUT FORMAT — use exactly these section headers with ## prefix:
 
 [1 substantial paragraph synthesizing who this person is at their core and what the next phase is about. End with one concrete, actionable piece of wisdom from the chart.]`
 
-    const userMessage = `Please provide a complete Four Pillars reading for:
+    const userMessage = lang === 'zh'
+      ? `请为以下出生信息提供完整的八字命书解读：
+- 出生日期：${year}年${month}月${day}日
+- 出生时辰：${hourLabel}
+- 性别：${gender}
+
+${baziContext}
+
+请以上述预计算的四柱八字为基础，完成整篇命书解读。`
+      : `Please provide a complete Four Pillars reading for:
 - Birth date: ${year}-${month}-${day}
 - Birth hour: ${hourLabel}
 - Gender: ${gender}
@@ -244,7 +365,7 @@ Use the pre-calculated Four Pillars above as the foundation for your entire read
       },
       body: JSON.stringify({
         model: 'deepseek-chat',
-        max_tokens: 2000,
+        max_tokens: 3000,  // 中文可能需要更多 tokens，从2000增加到3000
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userMessage },
@@ -253,7 +374,7 @@ Use the pre-calculated Four Pillars above as the foundation for your entire read
     })
 
     const data = await response.json()
-    const reading = data.choices?.[0]?.message?.content || 'The chart could not be calculated. Please try again.'
+    const reading = data.choices?.[0]?.message?.content || (lang === 'zh' ? '命书生成失败，请重试。' : 'The chart could not be calculated. Please try again.')
     return NextResponse.json({ reading })
 
   } catch (err) {
