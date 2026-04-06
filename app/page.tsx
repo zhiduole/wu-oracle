@@ -9,11 +9,41 @@ function formatDate(d: Date) {
   return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })
 }
 
+const SHICHEN_LABELS = [
+  '23:00 – 01:00 — Rat (子时)',
+  '01:00 – 03:00 — Ox (丑时)',
+  '03:00 – 05:00 — Tiger (寅时)',
+  '05:00 – 07:00 — Rabbit (卯时)',
+  '07:00 – 09:00 — Dragon (辰时)',
+  '09:00 – 11:00 — Snake (巳时)',
+  '11:00 – 13:00 — Horse (午时)',
+  '13:00 – 15:00 — Goat (未时)',
+  '15:00 – 17:00 — Monkey (申时)',
+  '17:00 – 19:00 — Rooster (酉时)',
+  '19:00 – 21:00 — Dog (戌时)',
+  '21:00 – 23:00 — Pig (亥时)',
+]
+
+type BaziData = {
+  fullChinese: string
+  yearPillar: string
+  monthPillar: string
+  dayPillar: string
+  hourPillar: string
+  dayMaster: string
+  elementBalance: string
+}
+
 export default function HomePage() {
   const [clockTime, setClockTime] = useState('')
   const [clockDate, setClockDate] = useState('')
   const [form, setForm] = useState({ year: '', month: '', day: '', hour: '', gender: '' })
   const [ready, setReady] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [preview, setPreview] = useState('')
+  const [bazi, setBazi] = useState<BaziData | null>(null)
+  const [displayed, setDisplayed] = useState('')
+  const [typingDone, setTypingDone] = useState(false)
 
   useEffect(() => {
     const tick = () => {
@@ -27,16 +57,68 @@ export default function HomePage() {
   }, [])
 
   useEffect(() => {
-    setReady(form.year.length === 4 && !!form.month && !!form.day && form.hour !== '' && !!form.gender)
+    setReady(
+      form.year.length === 4 &&
+      parseInt(form.year) >= 1930 &&
+      parseInt(form.year) <= 2006 &&
+      !!form.month && !!form.day &&
+      form.hour !== '' && !!form.gender
+    )
   }, [form])
 
-  function handleCast() {
-    if (!ready) return
+  // Typing animation for preview
+  useEffect(() => {
+    if (!preview) return
+    let i = 0
+    setDisplayed('')
+    setTypingDone(false)
+    const interval = setInterval(() => {
+      if (i < preview.length) {
+        setDisplayed(preview.slice(0, ++i))
+      } else {
+        clearInterval(interval)
+        setTypingDone(true)
+      }
+    }, 18)
+    return () => clearInterval(interval)
+  }, [preview])
+
+  async function handlePreview() {
+    if (!ready || loading) return
+    setLoading(true)
+    setPreview('')
+    setBazi(null)
+    setTypingDone(false)
+
+    // Save to sessionStorage for after payment
     sessionStorage.setItem('bazi_year', form.year)
     sessionStorage.setItem('bazi_month', form.month)
     sessionStorage.setItem('bazi_day', form.day)
     sessionStorage.setItem('bazi_hour', form.hour)
     sessionStorage.setItem('bazi_gender', form.gender)
+
+    try {
+      const res = await fetch('/api/preview', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      })
+      const data = await res.json()
+      if (data.preview) {
+        setPreview(data.preview)
+        setBazi(data.bazi)
+        setTimeout(() => {
+          document.getElementById('previewSection')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        }, 100)
+      }
+    } catch {
+      setPreview('Something went wrong. Please try again.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  function handlePay() {
     const successUrl = `${window.location.origin}/success`
     window.location.href = `/api/checkout?successUrl=${encodeURIComponent(successUrl)}`
   }
@@ -47,6 +129,7 @@ export default function HomePage() {
     <div style={s.body}>
       <div style={s.starsLayer} aria-hidden="true" />
 
+      {/* Clock banner */}
       <div style={s.clockBanner}>
         <span style={s.clockLabel}>Your local time</span>
         <span style={s.clockDisplay}>{clockTime || '--:--:--'}</span>
@@ -55,11 +138,12 @@ export default function HomePage() {
 
       <div style={s.page}>
 
+        {/* Hero */}
         <header style={s.hero}>
           <div style={s.eyebrow}>Chinese Astrology · 八字命理</div>
           <h1 style={s.heroTitle}>
             Your Chinese Astrology<br />
-          <em style={s.heroEm}>Birth Chart</em>
+            <em style={s.heroEm}>Birth Chart</em>
           </h1>
           <p style={s.heroSub}>
             Based on the Four Pillars system — the ancient Chinese method that uses your exact birth date and hour to reveal your character, life patterns, and what the next three years hold.
@@ -71,32 +155,16 @@ export default function HomePage() {
           </div>
         </header>
 
-        <div style={s.includesBox}>
-          <div style={s.includesTopLine} />
-          <p style={s.includesLabel}>What your reading includes</p>
-          <div style={s.includesGrid}>
-            {[
-              { icon: '◈', title: 'Your Four Pillars', desc: 'Year, Month, Day & Hour — your cosmic coordinates at birth' },
-              { icon: '◉', title: 'Character & Strengths', desc: 'What your chart says about who you naturally are' },
-              { icon: '◎', title: 'Current Year Energy', desc: `How ${currentYear} interacts with your personal chart` },
-              { icon: '◇', title: 'Three-Year Forecast', desc: 'The dominant patterns shaping the next three years' },
-            ].map((item, i) => (
-              <div key={i} style={s.includesItem}>
-                <span style={s.includesIcon}>{item.icon}</span>
-                <div>
-                  <p style={s.includesTitle}>{item.title}</p>
-                  <p style={s.includesDesc}>{item.desc}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
+        {/* Form card */}
         <div style={s.card}>
           <div style={s.cardTopLine} />
           <h2 style={s.cardTitle}>Enter Your Birth Details</h2>
-          <p style={s.cardSub}>Exact birth time significantly improves accuracy. If unknown, choose the closest window.</p>
+          <p style={s.cardSub}>
+            Enter your details below and receive a free preview of your destiny chart instantly —
+            no payment required to begin.
+          </p>
 
+          {/* Gender */}
           <div style={s.fieldGroup}>
             <label style={s.fieldLabel}>Gender</label>
             <div style={s.genderRow}>
@@ -112,6 +180,7 @@ export default function HomePage() {
             </div>
           </div>
 
+          {/* Date */}
           <div style={s.fieldGroup}>
             <label style={s.fieldLabel}>Date of Birth</label>
             <div style={s.dateRow}>
@@ -120,7 +189,7 @@ export default function HomePage() {
                 <input
                   type="number" style={s.input}
                   placeholder="e.g. 1990"
-                  min="1900" max={currentYear}
+                  min="1930" max={currentYear}
                   value={form.year}
                   onChange={e => setForm(f => ({ ...f, year: e.target.value }))}
                 />
@@ -129,8 +198,8 @@ export default function HomePage() {
                 <span style={s.dateColLabel}>Month</span>
                 <select style={s.select} value={form.month} onChange={e => setForm(f => ({ ...f, month: e.target.value }))}>
                   <option value="">Month</option>
-                  {['January','February','March','April','May','June','July','August','September','October','November','December'].map((m, i) => (
-                    <option key={i} value={String(i + 1)}>{m}</option>
+                  {['January','February','March','April','May','June','July','August','September','October','November','December'].map((m,i) => (
+                    <option key={i} value={String(i+1)}>{m}</option>
                   ))}
                 </select>
               </div>
@@ -138,7 +207,7 @@ export default function HomePage() {
                 <span style={s.dateColLabel}>Day</span>
                 <select style={s.select} value={form.day} onChange={e => setForm(f => ({ ...f, day: e.target.value }))}>
                   <option value="">Day</option>
-                  {Array.from({ length: 31 }, (_, i) => i + 1).map(d => (
+                  {Array.from({ length: 31 }, (_,i) => i+1).map(d => (
                     <option key={d} value={String(d)}>{d}</option>
                   ))}
                 </select>
@@ -146,53 +215,136 @@ export default function HomePage() {
             </div>
           </div>
 
+          {/* Hour */}
           <div style={s.fieldGroup}>
             <label style={s.fieldLabel}>
               Birth Hour <span style={s.fieldNote}>(Chinese two-hour period)</span>
             </label>
             <select style={{ ...s.select, width: '100%' }} value={form.hour} onChange={e => setForm(f => ({ ...f, hour: e.target.value }))}>
               <option value="">Select the time window of your birth…</option>
-              {[
-                '23:00 – 01:00 — Rat (子时)',
-                '01:00 – 03:00 — Ox (丑时)',
-                '03:00 – 05:00 — Tiger (寅时)',
-                '05:00 – 07:00 — Rabbit (卯时)',
-                '07:00 – 09:00 — Dragon (辰时)',
-                '09:00 – 11:00 — Snake (巳时)',
-                '11:00 – 13:00 — Horse (午时)',
-                '13:00 – 15:00 — Goat (未时)',
-                '15:00 – 17:00 — Monkey (申时)',
-                '17:00 – 19:00 — Rooster (酉时)',
-                '19:00 – 21:00 — Dog (戌时)',
-                '21:00 – 23:00 — Pig (亥时)',
-              ].map((label, i) => (
+              {SHICHEN_LABELS.map((label, i) => (
                 <option key={i} value={String(i)}>{label}</option>
               ))}
             </select>
             <p style={s.hourNote}>Chinese astrology groups the 24-hour day into 12 two-hour periods, each governed by an animal sign.</p>
           </div>
 
+          {/* Free preview button */}
           <div style={s.ctaRow}>
             <div>
-              <p style={s.ctaPrice}>$9.99 · one reading</p>
-              <p style={s.ctaNote}>Secure payment via Creem · Visa, Mastercard, Apple Pay, Google Pay</p>
+              <p style={s.ctaFree}>✦ Free instant preview</p>
+              <p style={s.ctaNote}>No payment needed to see your chart</p>
             </div>
             <button
-              style={{ ...s.castBtn, ...(ready ? {} : s.castBtnDisabled) }}
-              onClick={handleCast}
-              disabled={!ready}
+              style={{ ...s.previewBtn, ...(!ready || loading ? s.previewBtnDisabled : {}) }}
+              onClick={handlePreview}
+              disabled={!ready || loading}
             >
-              Reveal My Destiny · $9.99 →
+              {loading ? 'Reading your chart…' : 'Reveal My Chart →'}
             </button>
           </div>
         </div>
 
-        <div style={s.trustRow}>
-          <span style={s.trustItem}>◈ Traditional Four Pillars methodology</span>
-          <span style={s.trustItem}>◈ Interpreted for Western readers</span>
-          <span style={s.trustItem}>◈ Instant delivery</span>
-        </div>
+        {/* Loading state */}
+        {loading && (
+          <div style={s.loadingBox}>
+            <div style={s.loadingGlyphs}>
+              {['年','月','日','时'].map((g,i) => (
+                <span key={i} style={{ ...s.loadingGlyph, animationDelay: `${i*0.3}s` }}>{g}</span>
+              ))}
+            </div>
+            <p style={s.loadingText}>Calculating your Four Pillars…</p>
+          </div>
+        )}
 
+        {/* Preview section */}
+        {preview && (
+          <div id="previewSection" style={s.previewSection}>
+            <div style={s.previewTopLine} />
+
+            {/* Four Pillars display */}
+            {bazi && (
+              <div style={s.pillarsBox}>
+                <p style={s.pillarsLabel}>Your Four Pillars · {bazi.fullChinese}</p>
+                <div style={s.pillarsGrid}>
+                  {[
+                    { label: 'Year', value: bazi.yearPillar, sub: 'Roots & Heritage' },
+                    { label: 'Month', value: bazi.monthPillar, sub: 'Career & Social Self' },
+                    { label: 'Day', value: bazi.dayPillar, sub: 'Core Self · Day Master' },
+                    { label: 'Hour', value: bazi.hourPillar, sub: 'Inner World & Later Life' },
+                  ].map((p,i) => (
+                    <div key={i} style={s.pillarItem}>
+                      <p style={s.pillarLabel}>{p.label}</p>
+                      <p style={s.pillarValue}>{p.value.split(' ')[0]}</p>
+                      <p style={s.pillarSub}>{p.sub}</p>
+                    </div>
+                  ))}
+                </div>
+                <p style={s.pillarsDayMaster}>Day Master: {bazi.dayMaster}</p>
+              </div>
+            )}
+
+            {/* Preview text */}
+            <div style={s.previewCard}>
+              <p style={s.previewCardLabel}>✦ Your Destiny Preview</p>
+              <div style={s.previewText}>
+                {displayed}
+                {!typingDone && <span style={s.cursor} />}
+              </div>
+            </div>
+
+            {/* Paywall / upsell */}
+            {typingDone && (
+              <div style={s.paywallBox}>
+                <div style={s.paywallGlow} />
+                <p style={s.paywallTitle}>Your Full Destiny Chart Awaits</p>
+                <p style={s.paywallSub}>
+                  The preview above is just the surface. Your complete reading includes:
+                </p>
+                <div style={s.paywallList}>
+                  {[
+                    'Deep character analysis — your strengths, blind spots, and what drives you',
+                    'Life patterns & recurring themes — why certain things keep happening',
+                    `${currentYear} in detail — what is opening, what is closing, and when`,
+                    `Three-year forecast — ${currentYear}, ${currentYear+1}, ${currentYear+2} broken down`,
+                    'How to work with your chart — specific, actionable guidance',
+                    'The turning point your chart reveals — and how to prepare for it',
+                  ].map((item,i) => (
+                    <div key={i} style={s.paywallItem}>
+                      <span style={s.paywallCheck}>◈</span>
+                      <span style={s.paywallItemText}>{item}</span>
+                    </div>
+                  ))}
+                </div>
+
+                <div style={s.paywallCta}>
+                  <div>
+                    <p style={s.paywallPrice}>$9.99 · Complete reading</p>
+                    <p style={s.paywallNote}>Delivered instantly · Secure payment via Creem</p>
+                  </div>
+                  <button style={s.payBtn} onClick={handlePay}>
+                    Unlock My Full Reading · $9.99 →
+                  </button>
+                </div>
+
+                <p style={s.paywallDisclaimer}>
+                  Your chart details are already saved. Payment takes you directly to your complete reading.
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Trust row */}
+        {!preview && (
+          <div style={s.trustRow}>
+            <span style={s.trustItem}>◈ Traditional Four Pillars methodology</span>
+            <span style={s.trustItem}>◈ Interpreted for Western readers</span>
+            <span style={s.trustItem}>◈ Free preview · Full reading $9.99</span>
+          </div>
+        )}
+
+        {/* Footer */}
         <footer style={s.footer}>
           <div style={s.footerGlyphs}>年 月 日 时</div>
           <p style={s.footerCopy}>The Four Pillars have charted human destiny for over a thousand years.</p>
@@ -206,6 +358,14 @@ export default function HomePage() {
         </footer>
 
       </div>
+
+      <style>{`
+        @keyframes glyph-pulse {
+          0%,100%{ opacity:0.2; transform:scale(0.85); }
+          50%{ opacity:0.8; transform:scale(1.1); }
+        }
+        @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+      `}</style>
     </div>
   )
 }
@@ -234,21 +394,14 @@ const s: Record<string, React.CSSProperties> = {
   clockDisplay: { fontSize: 18, fontWeight: 300, letterSpacing: '0.1em', color: '#e8e0cc' },
   clockDate: { fontSize: 10, color: 'rgba(212,201,176,0.35)', letterSpacing: '0.15em', fontStyle: 'italic' },
   page: { position: 'relative', zIndex: 1, maxWidth: 720, margin: '0 auto', padding: '64px 24px 100px' },
-  hero: { textAlign: 'center', marginBottom: 52 },
+  hero: { textAlign: 'center', marginBottom: 48 },
   eyebrow: { display: 'inline-block', border: '1px solid rgba(192,142,70,0.35)', color: 'rgba(192,142,70,0.75)', fontSize: 10, letterSpacing: '0.4em', padding: '5px 18px', marginBottom: 24, textTransform: 'uppercase' },
-  heroTitle: { fontFamily: 'Georgia, serif', fontSize: 'clamp(32px, 7vw, 62px)', fontWeight: 300, lineHeight: 1.05, color: '#e8e0cc', letterSpacing: '0.02em', marginBottom: 20 },  heroEm: { color: '#c08e46', fontStyle: 'italic' },
-  heroSub: { fontSize: 16, fontWeight: 300, lineHeight: 1.85, color: 'rgba(232,224,204,0.55)', maxWidth: 520, margin: '0 auto 28px' },
+  heroTitle: { fontFamily: 'Georgia, serif', fontSize: 'clamp(32px, 7vw, 62px)', fontWeight: 300, lineHeight: 1.05, color: '#e8e0cc', letterSpacing: '0.02em', marginBottom: 20 },
+  heroEm: { color: '#c08e46', fontStyle: 'italic' },
+  heroSub: { fontSize: 16, fontWeight: 300, lineHeight: 1.85, color: 'rgba(232,224,204,0.55)', maxWidth: 540, margin: '0 auto 28px' },
   divider: { display: 'flex', alignItems: 'center', gap: 18, maxWidth: 180, margin: '0 auto' },
   dividerLine: { flex: 1, height: 1, background: 'rgba(192,142,70,0.18)' },
   dividerGlyph: { fontFamily: 'serif', fontSize: 22, color: 'rgba(192,142,70,0.35)', lineHeight: 1 },
-  includesBox: { border: '1px solid rgba(212,201,176,0.1)', background: 'rgba(255,255,255,0.018)', padding: '28px 32px', marginBottom: 28, position: 'relative' },
-  includesTopLine: { position: 'absolute', top: 0, left: 0, right: 0, height: 1, background: 'linear-gradient(90deg, transparent, rgba(192,142,70,0.5), transparent)' },
-  includesLabel: { fontSize: 9, letterSpacing: '0.45em', color: 'rgba(192,142,70,0.7)', textTransform: 'uppercase', marginBottom: 20 },
-  includesGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 },
-  includesItem: { display: 'flex', gap: 12, alignItems: 'flex-start' },
-  includesIcon: { fontSize: 16, color: 'rgba(192,142,70,0.6)', flexShrink: 0, marginTop: 2 },
-  includesTitle: { fontSize: 14, color: '#e8e0cc', marginBottom: 3 },
-  includesDesc: { fontSize: 12, color: 'rgba(232,224,204,0.45)', lineHeight: 1.55, fontStyle: 'italic' },
   card: { background: 'rgba(18,20,26,0.92)', border: '1px solid rgba(212,201,176,0.12)', padding: '44px 48px', position: 'relative', marginBottom: 20 },
   cardTopLine: { position: 'absolute', top: 0, left: 0, right: 0, height: 1, background: 'linear-gradient(90deg, transparent, rgba(192,142,70,0.5), transparent)' },
   cardTitle: { fontFamily: 'Georgia, serif', fontSize: 24, fontWeight: 300, color: '#e8e0cc', letterSpacing: '0.08em', marginBottom: 8 },
@@ -266,13 +419,53 @@ const s: Record<string, React.CSSProperties> = {
   select: { background: 'rgba(18,20,26,0.95)', border: '1px solid rgba(212,201,176,0.15)', color: '#e8e0cc', fontFamily: 'Georgia, serif', fontSize: 14, padding: '11px 12px', outline: 'none', cursor: 'pointer' },
   hourNote: { fontSize: 11, color: 'rgba(232,224,204,0.3)', fontStyle: 'italic', marginTop: 8, lineHeight: 1.6 },
   ctaRow: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 20, flexWrap: 'wrap' as const, paddingTop: 28, borderTop: '1px solid rgba(212,201,176,0.08)', marginTop: 4 },
-  ctaPrice: { fontSize: 14, color: 'rgba(232,224,204,0.55)', letterSpacing: '0.15em', fontStyle: 'italic' },
-  ctaNote: { fontSize: 11, color: 'rgba(232,224,204,0.25)', marginTop: 4 },
-  castBtn: { background: 'linear-gradient(135deg, #c08e46, #9a6e2e)', color: '#0d0f14', border: 'none', fontFamily: 'Georgia, serif', fontSize: 13, fontWeight: 600, letterSpacing: '0.25em', padding: '14px 28px', cursor: 'pointer', whiteSpace: 'nowrap' as const },
-  castBtnDisabled: { background: 'rgba(192,142,70,0.15)', color: 'rgba(13,15,20,0.3)', cursor: 'not-allowed' },
+  ctaFree: { fontSize: 14, color: '#c08e46', letterSpacing: '0.1em', marginBottom: 4 },
+  ctaNote: { fontSize: 11, color: 'rgba(232,224,204,0.3)' },
+  previewBtn: { background: 'linear-gradient(135deg, #c08e46, #9a6e2e)', color: '#0d0f14', border: 'none', fontFamily: 'Georgia, serif', fontSize: 13, fontWeight: 600, letterSpacing: '0.25em', padding: '14px 28px', cursor: 'pointer', whiteSpace: 'nowrap' as const },
+  previewBtnDisabled: { background: 'rgba(192,142,70,0.15)', color: 'rgba(13,15,20,0.3)', cursor: 'not-allowed' },
+  loadingBox: { textAlign: 'center', padding: '44px 0' },
+  loadingGlyphs: { display: 'flex', justifyContent: 'center', gap: 24, marginBottom: 20 },
+  loadingGlyph: { fontFamily: 'serif', fontSize: 30, color: 'rgba(192,142,70,0.5)', animation: 'glyph-pulse 1.8s ease-in-out infinite' },
+  loadingText: { fontSize: 12, color: 'rgba(232,224,204,0.25)', letterSpacing: '0.35em', textTransform: 'uppercase', fontStyle: 'italic' },
+
+  // Preview section
+  previewSection: { background: 'rgba(18,20,26,0.92)', border: '1px solid rgba(212,201,176,0.12)', padding: '44px 48px', position: 'relative', marginBottom: 20 },
+  previewTopLine: { position: 'absolute', top: 0, left: 0, right: 0, height: 1, background: 'linear-gradient(90deg, transparent, rgba(192,142,70,0.5), transparent)' },
+
+  // Pillars display
+  pillarsBox: { marginBottom: 32, paddingBottom: 28, borderBottom: '1px solid rgba(212,201,176,0.08)' },
+  pillarsLabel: { fontSize: 10, letterSpacing: '0.35em', color: 'rgba(192,142,70,0.5)', textTransform: 'uppercase', marginBottom: 16, textAlign: 'center' as const },
+  pillarsGrid: { display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 12 },
+  pillarItem: { textAlign: 'center' as const, padding: '12px 8px', border: '1px solid rgba(212,201,176,0.08)', background: 'rgba(255,255,255,0.02)' },
+  pillarLabel: { fontSize: 9, letterSpacing: '0.3em', color: 'rgba(192,142,70,0.5)', textTransform: 'uppercase', marginBottom: 6 },
+  pillarValue: { fontSize: 20, color: '#e8e0cc', marginBottom: 4, fontFamily: 'serif' },
+  pillarSub: { fontSize: 10, color: 'rgba(232,224,204,0.3)', fontStyle: 'italic', lineHeight: 1.4 },
+  pillarsDayMaster: { fontSize: 11, color: 'rgba(192,142,70,0.5)', textAlign: 'center' as const, letterSpacing: '0.2em', fontStyle: 'italic' },
+
+  // Preview card
+  previewCard: { marginBottom: 32 },
+  previewCardLabel: { fontSize: 10, letterSpacing: '0.4em', color: 'rgba(192,142,70,0.7)', textTransform: 'uppercase', marginBottom: 16 },
+  previewText: { fontSize: 17, fontWeight: 300, lineHeight: 1.95, color: 'rgba(232,224,204,0.85)', minHeight: 60 },
+  cursor: { display: 'inline-block', width: '1.5px', height: '0.9em', background: '#c08e46', marginLeft: 1, verticalAlign: 'text-bottom', animation: 'blink 0.7s step-end infinite' },
+
+  // Paywall
+  paywallBox: { border: '1px solid rgba(192,142,70,0.25)', padding: '36px 40px', position: 'relative', background: 'rgba(192,142,70,0.03)' },
+  paywallGlow: { position: 'absolute', top: 0, left: 0, right: 0, height: 1, background: 'linear-gradient(90deg, transparent, rgba(192,142,70,0.6), transparent)' },
+  paywallTitle: { fontFamily: 'Georgia, serif', fontSize: 22, fontWeight: 300, color: '#e8e0cc', letterSpacing: '0.06em', marginBottom: 10, textAlign: 'center' as const },
+  paywallSub: { fontSize: 14, color: 'rgba(232,224,204,0.45)', fontStyle: 'italic', textAlign: 'center' as const, marginBottom: 24, lineHeight: 1.6 },
+  paywallList: { marginBottom: 28 },
+  paywallItem: { display: 'flex', gap: 12, alignItems: 'flex-start', marginBottom: 10 },
+  paywallCheck: { color: '#c08e46', flexShrink: 0, fontSize: 14, marginTop: 2 },
+  paywallItemText: { fontSize: 14, color: 'rgba(232,224,204,0.65)', lineHeight: 1.6 },
+  paywallCta: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 20, flexWrap: 'wrap' as const, paddingTop: 24, borderTop: '1px solid rgba(192,142,70,0.15)' },
+  paywallPrice: { fontSize: 15, color: 'rgba(232,224,204,0.6)', letterSpacing: '0.15em', fontStyle: 'italic', marginBottom: 4 },
+  paywallNote: { fontSize: 11, color: 'rgba(232,224,204,0.3)' },
+  payBtn: { background: 'linear-gradient(135deg, #c08e46, #9a6e2e)', color: '#0d0f14', border: 'none', fontFamily: 'Georgia, serif', fontSize: 13, fontWeight: 600, letterSpacing: '0.25em', padding: '15px 30px', cursor: 'pointer', whiteSpace: 'nowrap' as const },
+  paywallDisclaimer: { fontSize: 11, color: 'rgba(232,224,204,0.25)', textAlign: 'center' as const, marginTop: 16, fontStyle: 'italic' },
+
   trustRow: { display: 'flex', justifyContent: 'center', gap: 24, flexWrap: 'wrap' as const, marginBottom: 64 },
   trustItem: { fontSize: 11, color: 'rgba(232,224,204,0.25)', letterSpacing: '0.1em' },
-  footer: { textAlign: 'center' },
+  footer: { textAlign: 'center', marginTop: 60 },
   footerGlyphs: { fontSize: 16, letterSpacing: 20, color: 'rgba(192,142,70,0.15)', marginBottom: 14 },
   footerCopy: { fontSize: 11, letterSpacing: '0.2em', color: 'rgba(232,224,204,0.2)', fontStyle: 'italic', marginBottom: 12 },
   footerLinks: { display: 'flex', justifyContent: 'center', gap: 12, flexWrap: 'wrap' as const },
